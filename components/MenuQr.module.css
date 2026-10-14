@@ -1,0 +1,27 @@
+.section { margin-bottom: 24px; }
+.included { display: inline-flex; align-items: center; gap: 6px; }
+.intro { margin: 15px 0 25px; color: #849186; font-size: 13px; line-height: 1.7; }
+.layout { display: grid; grid-template-columns: 268px minmax(0, 1fr); gap: 34px; align-items: center; }
+.preview { background: #fff; border: 1px solid #e2e9df; border-radius: 10px; padding: 13px 13px 23px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.preview img { display: block; width: 240px; height: auto; max-width: 100%; }
+.preview strong { margin: 4px 0 6px; font-family: Georgia, serif; font-size: 21px; overflow-wrap: anywhere; }
+.preview span { color: #849186; font-size: 11px; }
+.content { min-width: 0; }
+.content h3 { font-family: Georgia, serif; font-size: 26px; margin: 0 0 12px; }
+.content p { color: #819084; font-size: 12px; line-height: 1.75; margin: 0 0 19px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.content .formatNote { font-size: 10px; color: #96a096; margin-bottom: 26px; }
+.linkLabel { display: block; color: #728777; font-size: 9px; font-weight: 800; letter-spacing: .15em; margin-bottom: 9px; }
+.linkRow { display: flex; align-items: stretch; gap: 8px; }
+.linkRow input { width: 100%; min-width: 0; border: 1px solid #dbe2d8; border-radius: 6px; background: #f8faf6; padding: 11px; color: #426348; font-size: 11px; }
+.linkRow input:focus { outline: 2px solid #66866a; outline-offset: 2px; }
+.content .copyNotice { font-size: 11px; margin: 8px 0 0; color: #456e48; }
+.openLink { display: inline-flex; align-items: center; gap: 6px; color: #567a5b; font-size: 11px; font-weight: 700; margin-top: 14px; }
+.loading { padding: 60px 20px; text-align: center; color: #849186; font-size: 13px; }
+@media (max-width: 1000px) { .layout { grid-template-columns: 230px minmax(0, 1fr); gap: 24px; } }
+@media (max-width: 620px) {
+  .layout { grid-template-columns: 1fr; gap: 25px; }
+  .preview { width: 268px; max-width: 100%; justify-self: center; }
+  .included { font-size: 9px !important; }
+  .actions a { flex: 1; font-size: 11px; padding: 11px; }
+}
