@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { SignJWT } from "jose";
 
 const logo = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200"><rect width="1200" height="1200" fill="#246e3f"/><path d="M600 200v800M200 600h800M317 317l566 566M883 317 317 883" stroke="white" stroke-width="110"/></svg>')}`;
 const restaurant = {
@@ -7,6 +8,42 @@ const restaurant = {
   description: "Café y sabores para compartir.", address: "Buenos Aires", instagram: "", whatsapp: "5491112345678", orders_enabled: true,
   is_enabled: true, paid_until: "2099-01-01", created_at: "2026-01-01",
 };
+
+async function signInForBrowserTest(page: Page, role: "admin" | "restaurant") {
+  const token = await new SignJWT({ role, email: "browser@example.test", ...(role === "restaurant" ? { restaurantId: restaurant.id } : {}) })
+    .setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("1h")
+    .sign(new TextEncoder().encode(process.env.AUTH_SECRET));
+  await page.context().addCookies([{ name: "mesa_session", value: token, url: "http://localhost:3001" }]);
+}
+
+test("private panels redirect before rendering without a session", async ({ page, request }) => {
+  for (const path of ["/admin", "/panel"]) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.status()).toBe(307);
+    expect(response.headers().location).toBe("/ingresar");
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/ingresar$/);
+    await expect(page.locator(".panel-layout")).toHaveCount(0);
+  }
+  await signInForBrowserTest(page, "restaurant");
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/ingresar$/);
+  await signInForBrowserTest(page, "admin");
+  await page.goto("/panel");
+  await expect(page).toHaveURL(/\/ingresar$/);
+});
+
+test("logging out removes access to the admin panel", async ({ page }) => {
+  await signInForBrowserTest(page, "admin");
+  await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [] } }));
+  await page.goto("/admin");
+  await expect(page.locator(".panel-layout")).toBeVisible();
+  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  await expect(page).toHaveURL(/\/ingresar$/);
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/ingresar$/);
+  await expect(page.locator(".panel-layout")).toHaveCount(0);
+});
 
 async function expectNoPageOverflow(page: Page) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
@@ -130,11 +167,19 @@ test("mobile pages and restaurant forms fit the viewport", async ({ page }, test
   await page.setViewportSize({ width: 375, height: 812 });
   await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [] } }));
   await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [] } }));
-  for (const path of ["/", "/ingresar", "/admin", "/panel"]) {
+  for (const path of ["/", "/ingresar"]) {
     await page.goto(path);
     await expect(page.getByRole("heading").first()).toBeVisible();
     await expectNoPageOverflow(page);
   }
+  await signInForBrowserTest(page, "admin");
+  await page.goto("/admin");
+  await expect(page.getByRole("heading").first()).toBeVisible();
+  await expectNoPageOverflow(page);
+  await signInForBrowserTest(page, "restaurant");
+  await page.goto("/panel");
+  await expect(page.getByRole("heading").first()).toBeVisible();
+  await expectNoPageOverflow(page);
   await page.getByRole("button", { name: "Nuevo producto" }).click();
   const price = page.getByLabel("Precio en ARS");
   await expect(price).toHaveValue("");
@@ -157,6 +202,7 @@ test("Premium owner can configure offers and see insights", async ({ page }) => 
     name: "Plato de prueba", description: "", price: 2500, category: "Principales",
     image_data: null, model_url: null, featured: false, promo_price: null, available: true, created_at: "2026-01-01" };
   await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [product], metrics: { visits: 15, productViews: 30, orderClicks: 4, topProducts: [{ product_id: product.id, name: product.name, views: 12 }] } } }));
+  await signInForBrowserTest(page, "restaurant");
   await page.goto("/panel");
   await page.getByRole("button", { name: "Editar" }).click();
   await expect(page.getByText("PROMOCIÓN Y DESTACADOS")).toBeVisible();
@@ -179,12 +225,14 @@ test("new-account trial and updated prices are clear on mobile", async ({ page }
   const trialRestaurant = { ...restaurant, is_trial: true };
   await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [trialRestaurant] } }));
   await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant: trialRestaurant, products: [] } }));
+  await signInForBrowserTest(page, "admin");
   await page.goto("/admin");
   await expect(page.getByText("Prueba gratis")).toBeVisible();
   await page.getByRole("button", { name: "Agregar local" }).click();
   await expect(page.getByText("El primer mes es gratis", { exact: false })).toBeVisible();
   await expect(page.getByRole("option", { name: "Esencial · $10.000/mes" })).toHaveCount(1);
   await expect(page.getByRole("option", { name: "Premium · $18.000/mes" })).toHaveCount(1);
+  await signInForBrowserTest(page, "restaurant");
   await page.goto("/panel");
   await expect(page.getByText("Tu primer mes gratis está activo")).toBeVisible();
   await expect(page.getByText(/Después cuesta.*18.000/)).toBeVisible();
@@ -227,6 +275,7 @@ test("each plan opens signup and a new request stays pending", async ({ page, re
   const pending = { ...restaurant, signup_status: "pending", is_enabled: false, paid_until: null, owner_email: "nuevo@example.com" };
   await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [pending] } }));
   await page.route("**/api/admin/restaurants/*", route => route.fulfill({ json: { ok: true } }));
+  await signInForBrowserTest(page, "admin");
   await page.goto("/admin");
   await expect(page.getByText("Pendiente")).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar prueba" })).toBeVisible();
