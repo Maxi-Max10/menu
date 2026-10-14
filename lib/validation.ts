@@ -18,6 +18,7 @@ export const brandingSchema = z.object({
   address: z.string().trim().max(180),
   instagram: z.string().trim().max(100),
   whatsapp: z.string().trim().max(40),
+  orders_enabled: z.boolean(),
 });
 export const productSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -25,9 +26,7 @@ export const productSchema = z.object({
   price: z.number().int().min(0).max(100_000_000),
   category: z.string().trim().min(1).max(50),
   image_data: imageSchema,
-  model_url: z.string().url().max(1000).refine((value) => {
-    const url = new URL(value);
-    return url.protocol === "https:" && url.pathname.toLowerCase().endsWith(".glb");
-  }, "Usá una URL HTTPS a un archivo .glb").nullable().optional(),
   available: z.boolean(),
+  featured: z.boolean(),
+  promo_price: z.number().int().min(0).max(100_000_000).nullable(),
 });

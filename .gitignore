@@ -10,3 +10,5 @@ mesa-vercel.zip
 skills-lock.json
 test-results/
 playwright-report/
+.venv/
+scan-worker/__pycache__/

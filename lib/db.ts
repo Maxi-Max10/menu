@@ -27,6 +27,7 @@ export async function ensureSchema() {
           address text NOT NULL DEFAULT '',
           instagram text NOT NULL DEFAULT '',
           whatsapp text NOT NULL DEFAULT '',
+          orders_enabled boolean NOT NULL DEFAULT false,
           is_enabled boolean NOT NULL DEFAULT true,
           paid_until timestamptz,
           created_at timestamptz NOT NULL DEFAULT now()
@@ -47,6 +48,8 @@ export async function ensureSchema() {
           category text NOT NULL DEFAULT 'General',
           image_data text,
           model_url text,
+          featured boolean NOT NULL DEFAULT false,
+          promo_price integer CHECK (promo_price >= 0),
           available boolean NOT NULL DEFAULT true,
           created_at timestamptz NOT NULL DEFAULT now()
         );
@@ -58,8 +61,19 @@ export async function ensureSchema() {
           period_end timestamptz NOT NULL,
           note text NOT NULL DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS menu_events (
+          id bigserial PRIMARY KEY,
+          restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+          product_id uuid REFERENCES products(id) ON DELETE CASCADE,
+          kind text NOT NULL CHECK (kind IN ('visit', 'product_view', 'order_click')),
+          created_at timestamptz NOT NULL DEFAULT now()
+        );
+        ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS orders_enabled boolean NOT NULL DEFAULT false;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS featured boolean NOT NULL DEFAULT false;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS promo_price integer;
         CREATE INDEX IF NOT EXISTS products_restaurant_idx ON products(restaurant_id);
         CREATE INDEX IF NOT EXISTS payments_restaurant_idx ON payments(restaurant_id);
+        CREATE INDEX IF NOT EXISTS menu_events_restaurant_date_idx ON menu_events(restaurant_id, created_at DESC);
       `);
     })().catch((error) => { globalForDb.menuSchemaReady = undefined; throw error; });
   }

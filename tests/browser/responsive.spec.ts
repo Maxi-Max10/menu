@@ -4,7 +4,7 @@ const logo = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3
 const restaurant = {
   id: "browser-fixture", name: "Cafetería del Parque y Cocina de Encuentros", slug: "cafe-del-parque",
   type: "Cafetería", plan: "premium", palette: "oliva", logo_data: logo,
-  description: "Café y sabores para compartir.", address: "Buenos Aires", instagram: "", whatsapp: "",
+  description: "Café y sabores para compartir.", address: "Buenos Aires", instagram: "", whatsapp: "5491112345678", orders_enabled: true,
   is_enabled: true, paid_until: "2099-01-01", created_at: "2026-01-01",
 };
 
@@ -72,7 +72,7 @@ test("mobile menu search and categories remain usable", async ({ page }) => {
   await expectNoPageOverflow(page);
 });
 
-test("example menu displays its photos and opens a dish at real scale", async ({ page }, testInfo) => {
+test("example Premium menu shows a promotion and builds a cart", async ({ page }) => {
   await page.goto("/demo");
   for (const dish of ["Ensalada de estación", "Hamburguesa de la casa", "Pasta al pesto", "Torta de chocolate y frutillas"]) {
     const photo = page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: dish }) }).locator("img");
@@ -80,17 +80,18 @@ test("example menu displays its photos and opens a dish at real scale", async ({
     await expect.poll(() => photo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   }
 
-  await page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: "Torta de chocolate y frutillas" }) }).getByRole("button", { name: "Ver en 3D / AR" }).click();
-  const dialog = page.getByRole("dialog", { name: "Vista 3D de Torta de chocolate y frutillas" });
+  const salad = page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: "Ensalada de estación" }) });
+  await expect(salad.getByText("Oferta")).toBeVisible();
+  await expect(salad.locator(".menu-price s")).toHaveText(/12.000/);
+  await salad.getByRole("button", { name: "Agregar" }).click();
+  await page.getByRole("button", { name: "Ver pedido, 1 productos" }).click();
+  const dialog = page.getByRole("dialog", { name: "Tu pedido" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator("model-viewer")).toHaveAttribute("src", "/menu-examples/torta-frutillas.glb");
-  await expect(dialog.locator("model-viewer")).toHaveAttribute("ar-scale", "fixed");
-  await expect.poll(() => dialog.locator("model-viewer").evaluate((viewer) => (viewer as HTMLElement & { loaded?: boolean }).loaded)).toBe(true);
-  const dimensions = await dialog.locator("model-viewer").evaluate((viewer) => (viewer as HTMLElement & { getDimensions(): { x: number; y: number; z: number } }).getDimensions());
-  expect(Math.max(dimensions.x, dimensions.y, dimensions.z)).toBeLessThan(0.3);
-  expect(Math.max(dimensions.x, dimensions.y, dimensions.z)).toBeGreaterThan(0.2);
-  await dialog.screenshot({ path: testInfo.outputPath("realistic-model.png") });
-  await dialog.getByRole("button", { name: "Cerrar" }).click();
+  await expect(dialog.locator(".cart-total strong")).toHaveText(/9.900/);
+  await dialog.getByRole("button", { name: "Agregar Ensalada de estación" }).click();
+  await expect(dialog.locator(".cart-total strong")).toHaveText(/19.800/);
+  await expect(dialog.getByRole("button", { name: "Copiar pedido de ejemplo" })).toBeVisible();
+  await dialog.getByRole("button", { name: "Cerrar pedido" }).click();
   await expect(dialog).toHaveCount(0);
 });
 
@@ -117,4 +118,22 @@ test("mobile pages and restaurant forms fit the viewport", async ({ page }, test
   expect(modal!.x).toBeGreaterThanOrEqual(0);
   expect(modal!.x + modal!.width).toBeLessThanOrEqual(375);
   await page.screenshot({ path: testInfo.outputPath("product-form.png") });
+});
+
+test("Premium owner can configure offers and see insights", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const product = { id: "11111111-1111-4111-8111-111111111111", restaurant_id: restaurant.id,
+    name: "Plato de prueba", description: "", price: 2500, category: "Principales",
+    image_data: null, model_url: null, featured: false, promo_price: null, available: true, created_at: "2026-01-01" };
+  await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [product], metrics: { visits: 15, productViews: 30, orderClicks: 4, topProducts: [{ product_id: product.id, name: product.name, views: 12 }] } } }));
+  await page.goto("/panel");
+  await page.getByRole("button", { name: "Editar" }).click();
+  await expect(page.getByText("PROMOCIÓN Y DESTACADOS")).toBeVisible();
+  await page.getByLabel("Destacar al principio de la carta").check();
+  await page.getByLabel("Precio promocional en ARS (opcional)").fill("2000");
+  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page.getByRole("button", { name: "Resultados" }).click();
+  await expect(page.getByText("CLICS PARA PEDIR")).toBeVisible();
+  await expect(page.locator(".metrics-grid strong").last()).toHaveText("4");
+  await expectNoPageOverflow(page);
 });

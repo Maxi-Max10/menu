@@ -27,6 +27,7 @@ export type Restaurant = {
   address: string;
   instagram: string;
   whatsapp: string;
+  orders_enabled: boolean;
   is_enabled: boolean;
   paid_until: string | null;
   created_at: string;
@@ -43,6 +44,8 @@ export type Product = {
   category: string;
   image_data: string | null;
   model_url: string | null;
+  featured: boolean;
+  promo_price: number | null;
   available: boolean;
   created_at: string;
 };
@@ -53,4 +56,8 @@ export function menuIsActive(restaurant: Pick<Restaurant, "is_enabled" | "paid_u
 
 export function formatMoney(amount: number) {
   return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(amount);
+}
+
+export function sellingPrice(product: Pick<Product, "price" | "promo_price">) {
+  return product.promo_price !== null && product.promo_price < product.price ? product.promo_price : product.price;
 }

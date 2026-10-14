@@ -25,14 +25,15 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         const found = await client.query("SELECT id FROM restaurants WHERE id = $1 FOR UPDATE", [id]);
         if (!found.rowCount) return "missing";
         if (data.plan === "basic") {
-          const check = await client.query<{ count: string; models: string }>("SELECT COUNT(*)::text AS count, COUNT(*) FILTER (WHERE model_url IS NOT NULL)::text AS models FROM products WHERE restaurant_id = $1", [id]);
-          if (Number(check.rows[0].count) > PLANS.basic.limit || Number(check.rows[0].models) > 0) return "limit";
+          const check = await client.query<{ count: string }>("SELECT COUNT(*)::text AS count FROM products WHERE restaurant_id = $1", [id]);
+          if (Number(check.rows[0].count) > PLANS.basic.limit) return "limit";
+          await client.query("UPDATE products SET featured = false, promo_price = NULL WHERE restaurant_id = $1", [id]);
         }
-        await client.query("UPDATE restaurants SET plan = $1 WHERE id = $2", [data.plan, id]);
+        await client.query("UPDATE restaurants SET plan = $1, orders_enabled = CASE WHEN $1 = 'basic' THEN false ELSE orders_enabled END WHERE id = $2", [data.plan, id]);
         return "ok";
       });
       if (outcome === "missing") return NextResponse.json({ error: "Local no encontrado" }, { status: 404 });
-      if (outcome === "limit") return NextResponse.json({ error: "Para pasar a Esencial, dejá hasta 100 productos y quitá los modelos 3D." }, { status: 409 });
+      if (outcome === "limit") return NextResponse.json({ error: "Para pasar a Esencial, dejá hasta 100 productos." }, { status: 409 });
     } else {
       const outcome = await transaction(async (client) => {
         const found = await client.query<Restaurant>("SELECT * FROM restaurants WHERE id = $1 FOR UPDATE", [id]);

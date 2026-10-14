@@ -12,9 +12,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const { id } = await context.params;
     const data = productSchema.parse(await request.json());
     const restaurant = await query<Restaurant>("SELECT plan FROM restaurants WHERE id = $1", [session.restaurantId]);
-    if (restaurant.rows[0]?.plan === "basic" && data.model_url) return NextResponse.json({ error: "Los modelos 3D/AR requieren Premium" }, { status: 403 });
-    const result = await query(`UPDATE products SET name=$1, description=$2, price=$3, category=$4, image_data=$5, model_url=$6, available=$7 WHERE id=$8 AND restaurant_id=$9`,
-      [data.name, data.description, data.price, data.category, data.image_data || null, data.model_url || null, data.available, id, session.restaurantId]);
+    if (data.promo_price !== null && data.promo_price >= data.price) return NextResponse.json({ error: "El precio promocional debe ser menor al precio normal" }, { status: 400 });
+    if (restaurant.rows[0]?.plan === "basic" && (data.featured || data.promo_price !== null)) return NextResponse.json({ error: "Los destacados y promociones requieren Premium" }, { status: 403 });
+    const result = await query(`UPDATE products SET name=$1, description=$2, price=$3, category=$4, image_data=$5, available=$6, featured=$7, promo_price=$8 WHERE id=$9 AND restaurant_id=$10`,
+      [data.name, data.description, data.price, data.category, data.image_data || null, data.available, data.featured, data.promo_price, id, session.restaurantId]);
     if (!result.rowCount) return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }
