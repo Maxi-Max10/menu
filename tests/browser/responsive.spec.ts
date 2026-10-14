@@ -169,8 +169,8 @@ test("mobile pages and restaurant forms fit the viewport", async ({ page }, test
   await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [] } }));
   await page.goto("/ingresar");
   await expect(page.getByText("¿Todavía no tenés cuenta?")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Elegí tu plan" })).toHaveAttribute("href", "/#planes");
-  for (const path of ["/", "/ingresar"]) {
+  await expect(page.getByRole("link", { name: "Registrate" })).toHaveAttribute("href", "/registrarse");
+  for (const path of ["/", "/ingresar", "/registrarse"]) {
     await page.goto(path);
     await expect(page.getByRole("heading").first()).toBeVisible();
     await expectNoPageOverflow(page);
@@ -242,6 +242,25 @@ test("new-account trial and updated prices are clear on mobile", async ({ page }
   await expectNoPageOverflow(page);
 });
 
+test("signup from login lets a local choose its plan", async ({ page }) => {
+  await page.route("**/api/auth/register", async (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({ plan: "premium", email: "nuevo@example.com" });
+    await route.fulfill({ status: 202, json: { message: "Solicitud recibida" } });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("link", { name: "Registrate" }).click();
+  await expect(page).toHaveURL(/\/registrarse$/);
+  await expect(page.getByLabel("Plan", { exact: true })).toHaveValue("");
+  await page.getByLabel("Plan", { exact: true }).selectOption("premium");
+  await expect(page.getByText(/18\.000 por mes/)).toBeVisible();
+  await page.getByLabel("Nombre del local").fill("Café Nuevo");
+  await page.getByLabel("Correo electrónico").fill("nuevo@example.com");
+  await page.getByLabel("Contraseña", { exact: true }).fill("claveSegura123");
+  await page.getByLabel("Repetir contraseña").fill("claveSegura123");
+  await page.getByRole("button", { name: "Empezar gratis" }).click();
+  await expect(page.getByRole("heading", { name: "Ya casi está." })).toBeVisible();
+});
+
 test("each plan opens signup and a new request stays pending", async ({ page, request }) => {
   const crossSite = await request.post("/api/auth/register", {
     headers: { Origin: "https://otro-sitio.example", "Content-Type": "application/json" },
@@ -257,6 +276,7 @@ test("each plan opens signup and a new request stays pending", async ({ page, re
   await expect(page.locator('.price-card').first().getByRole("link", { name: "Empezar gratis" })).toHaveAttribute("href", "/registrarse/esencial");
   await page.locator('.price-card').last().getByRole("link", { name: "Empezar gratis" }).click();
   await expect(page).toHaveURL(/\/registrarse\/premium$/);
+  await expect(page.getByLabel("Plan", { exact: true })).toHaveValue("premium");
   await expectNoPageOverflow(page);
   await page.getByLabel("Nombre del local").fill("Café Nuevo");
   await page.getByLabel("Tipo de local").selectOption("Cafetería");
