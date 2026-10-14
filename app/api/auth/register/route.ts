@@ -44,7 +44,7 @@ async function sendVerification(email: string, token: string) {
     from: `Polo <${user}>`,
     to: email,
     subject: "Confirmá tu correo para activar Polo",
-    text: `Abrí este enlace para confirmar tu correo y activar el mes gratis de Polo: ${link}\n\nEl enlace vence en 24 horas. Si no creaste esta cuenta, ignorá este mensaje.`,
+    text: `Abrí este enlace para confirmar tu correo y activar el mes gratis de Polo: ${link}\n\nPara activarlo necesitarás la contraseña que elegiste al registrarte. El enlace vence en 24 horas. Si no creaste esta cuenta, ignorá este mensaje.`,
   });
   return true;
 }

@@ -215,8 +215,12 @@ test("each plan opens signup and a new request stays pending", async ({ page, re
   await page.getByRole("button", { name: "Empezar gratis" }).click();
   await expect(page.getByRole("heading", { name: "Ya casi está." })).toBeVisible();
 
-  await page.route("**/api/auth/verify", route => route.fulfill({ json: { ok: true } }));
+  await page.route("**/api/auth/verify", route => {
+    expect(route.request().postDataJSON()).toMatchObject({ token: "a".repeat(64), password: "claveSegura123" });
+    return route.fulfill({ json: { ok: true } });
+  });
   await page.goto(`/verificar?token=${"a".repeat(64)}`);
+  await page.getByLabel("Contraseña").fill("claveSegura123");
   await page.getByRole("button", { name: "Confirmar y activar" }).click();
   await expect(page.getByRole("heading", { name: "¡Tu cuenta está lista!" })).toBeVisible();
 
@@ -226,4 +230,7 @@ test("each plan opens signup and a new request stays pending", async ({ page, re
   await page.goto("/admin");
   await expect(page.getByText("Pendiente")).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar prueba" })).toBeVisible();
+  page.once("dialog", dialog => dialog.dismiss());
+  await page.getByRole("button", { name: "Activar prueba" }).click();
+  await expect(page.getByText("Pendiente")).toBeVisible();
 });
