@@ -10,6 +10,8 @@ declare module "react" {
         "auto-rotate"?: boolean;
         ar?: boolean;
         "ar-modes"?: string;
+        "ar-scale"?: "auto" | "fixed";
+        "xr-environment"?: boolean;
         "shadow-intensity"?: string;
       };
     }

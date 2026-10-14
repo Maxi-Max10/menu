@@ -24,14 +24,14 @@ Las tablas se crean automáticamente cuando se hace la primera consulta a la bas
 
 Importá este directorio como proyecto Next.js. Configurá `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `NEXT_PUBLIC_SITE_URL` como variables de entorno en Vercel. `NEXT_PUBLIC_SITE_URL` debe ser la dirección estable de producción (por ejemplo, `https://tu-sitio.vercel.app`); así los QR generados incluso desde una vista previa apuntan a la carta publicada. Desplegá con la configuración predeterminada de Next.js. La base PostgreSQL debe permitir conexiones desde Vercel; los archivos que se suben como logo o fotos se optimizan en el navegador y se guardan en la base de datos. No se usa el disco temporal de Vercel para datos persistentes.
 
-Para usar modelos 3D, cada producto Premium necesita la URL pública HTTPS de su archivo `.glb`. El visor usa [model-viewer](https://modelviewer.dev/); la opción AR depende del navegador y del dispositivo.
+Para usar modelos 3D, cada producto Premium necesita la URL pública HTTPS de su archivo `.glb`. El archivo debe tener texturas realistas y medidas en metros (un plato suele medir entre 20 y 35 cm); la escala del GLB determina el tamaño en AR. El visor usa [model-viewer](https://modelviewer.dev/); la opción AR depende del navegador y del dispositivo.
 
 ## Notas operativas
 
 - El registro de cuota suma un mes calendario al vencimiento vigente, o desde el momento del pago si ya venció. Se guarda un asiento en `payments` con el importe del plan en ese momento.
 - El plan Esencial no admite más de 100 productos ni modelos 3D. Para bajar de Premium, primero hay que cumplir esos límites.
 - Esta versión no cobra automáticamente ni envía correos. El administrador acredita pagos manualmente y entrega las credenciales al local por su propio canal.
-- `/demo` contiene una carta ilustrativa sin datos reales, con tres fotos de productos y unas brochetas que permiten probar el visor 3D.
+- `/demo` contiene una carta ilustrativa sin datos reales, con fotos de productos y una torta escaneada que permite probar el visor 3D/AR. El modelo y su imagen son [Strawberry Chocolate Cake de Poly Haven](https://polyhaven.com/a/strawberry_chocolate_cake), bajo licencia CC0.
 
 ## Comandos
 

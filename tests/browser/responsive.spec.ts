@@ -72,19 +72,24 @@ test("mobile menu search and categories remain usable", async ({ page }) => {
   await expectNoPageOverflow(page);
 });
 
-test("example menu displays its photos and opens the 3D dish", async ({ page }) => {
+test("example menu displays its photos and opens a dish at real scale", async ({ page }, testInfo) => {
   await page.goto("/demo");
-  for (const dish of ["Ensalada de estación", "Hamburguesa de la casa", "Pasta al pesto"]) {
+  for (const dish of ["Ensalada de estación", "Hamburguesa de la casa", "Pasta al pesto", "Torta de chocolate y frutillas"]) {
     const photo = page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: dish }) }).locator("img");
     await expect(photo).toBeVisible();
     await expect.poll(() => photo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
   }
 
-  await page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: "Brochetas de la casa" }) }).getByRole("button", { name: "Ver en 3D / AR" }).click();
-  const dialog = page.getByRole("dialog", { name: "Vista 3D de Brochetas de la casa" });
+  await page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: "Torta de chocolate y frutillas" }) }).getByRole("button", { name: "Ver en 3D / AR" }).click();
+  const dialog = page.getByRole("dialog", { name: "Vista 3D de Torta de chocolate y frutillas" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator("model-viewer")).toHaveAttribute("src", "/menu-examples/brochetas.glb");
+  await expect(dialog.locator("model-viewer")).toHaveAttribute("src", "/menu-examples/torta-frutillas.glb");
+  await expect(dialog.locator("model-viewer")).toHaveAttribute("ar-scale", "fixed");
   await expect.poll(() => dialog.locator("model-viewer").evaluate((viewer) => (viewer as HTMLElement & { loaded?: boolean }).loaded)).toBe(true);
+  const dimensions = await dialog.locator("model-viewer").evaluate((viewer) => (viewer as HTMLElement & { getDimensions(): { x: number; y: number; z: number } }).getDimensions());
+  expect(Math.max(dimensions.x, dimensions.y, dimensions.z)).toBeLessThan(0.3);
+  expect(Math.max(dimensions.x, dimensions.y, dimensions.z)).toBeGreaterThan(0.2);
+  await dialog.screenshot({ path: testInfo.outputPath("realistic-model.png") });
   await dialog.getByRole("button", { name: "Cerrar" }).click();
   await expect(dialog).toHaveCount(0);
 });
