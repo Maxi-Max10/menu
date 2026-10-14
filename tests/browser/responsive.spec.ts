@@ -95,6 +95,29 @@ test("example Premium menu shows a promotion and builds a cart", async ({ page }
   await expect(dialog).toHaveCount(0);
 });
 
+test("plan examples show ordering only in Premium", async ({ page }) => {
+  await page.goto("/");
+  await page.locator(".price-card").first().getByRole("link", { name: "Ver carta Esencial" }).click();
+  await expect(page).toHaveURL(/\/demo\/esencial$/);
+  await expect(page.locator(".demo-ribbon")).toContainText("PLAN ESENCIAL");
+  await expect(page.locator(".menu-product")).toHaveCount(9);
+  await expect(page.getByRole("button", { name: "Agregar", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Ver pedido/ })).toHaveCount(0);
+  await expect(page.locator(".product-badge")).toHaveCount(0);
+  const essentialSalad = page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: "Ensalada de estación" }) });
+  await expect(essentialSalad.locator(".menu-price strong")).toHaveText(/12.000/);
+
+  await page.goto("/");
+  await page.locator(".price-card").last().getByRole("link", { name: "Probar carta Premium" }).click();
+  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page.locator(".demo-ribbon")).toContainText("PLAN PREMIUM");
+  await expect(page.getByRole("button", { name: "Agregar", exact: true })).toHaveCount(9);
+  await expect(page.getByRole("button", { name: /Ver pedido/ })).toBeVisible();
+  const premiumSalad = page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: "Ensalada de estación" }) });
+  await expect(premiumSalad.getByText("Oferta")).toBeVisible();
+  await expect(premiumSalad.locator(".menu-price strong")).toHaveText(/9.900/);
+});
+
 test("mobile pages and restaurant forms fit the viewport", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [] } }));
