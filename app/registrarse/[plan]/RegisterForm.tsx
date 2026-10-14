@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, CheckCircle2, LockKeyhole } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { BrandMark } from "@/components/BrandMark";
+import { SupportLinks } from "@/components/SupportLinks";
 import { api } from "@/lib/client";
 import { formatMoney, PLANS, type Plan, type VenueType } from "@/lib/types";
 
@@ -73,6 +74,7 @@ export function RegisterForm({ initialPlan }: { initialPlan?: Plan }) {
         <button className="button button-dark auth-submit" disabled={busy}>{busy ? "Creando cuenta…" : "Empezar gratis"}<ArrowRight size={18} /></button>
         <p className="register-login">¿Ya tenés cuenta? <Link href="/ingresar">Ingresá</Link></p>
       </form>}
+      <div className="auth-support"><span>¿Necesitás ayuda?</span><SupportLinks /></div>
     </div>
   </main>;
 }

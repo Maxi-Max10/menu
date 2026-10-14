@@ -182,11 +182,17 @@ test("mobile pages and restaurant forms fit the viewport", async ({ page }, test
   for (const path of ["/", "/ingresar", "/registrarse"]) {
     await page.goto(path);
     await expect(page.getByRole("heading").first()).toBeVisible();
+    if (path === "/") {
+      await expect(page.locator(".footer-support").getByRole("link", { name: "+54 9 2617 58-6685" })).toHaveAttribute("href", "tel:+5492617586685");
+    } else {
+      await expect(page.locator(".auth-support").getByRole("link", { name: "contacto@polopositivoar.com" })).toHaveAttribute("href", "mailto:contacto@polopositivoar.com");
+    }
     await expectNoPageOverflow(page);
   }
   await signInForBrowserTest(page, "admin");
   await page.goto("/admin");
   await expect(page.getByRole("heading").first()).toBeVisible();
+  await expect(page.locator(".panel-mobile-support").getByRole("link", { name: "+54 9 2617 58-6685" })).toBeVisible();
   await expectNoPageOverflow(page);
   await signInForBrowserTest(page, "restaurant");
   await page.goto("/panel");
