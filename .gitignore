@@ -1,8 +1,10 @@
 node_modules
 .next
-.env
-.env.local
+.env*
+!.env.example
 .vercel
 *.log
 tsconfig.tsbuildinfo
 mesa-vercel.zip
+.agents/
+skills-lock.json
