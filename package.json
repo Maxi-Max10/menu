@@ -8,6 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:qr": "node --experimental-strip-types --test tests/menu-qr.test.mjs",
+    "test:billing": "node --experimental-strip-types --test tests/billing.test.mjs",
     "test:browsers": "playwright test"
   },
   "dependencies": {

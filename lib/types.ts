@@ -3,8 +3,8 @@ export type VenueType = "Restaurante" | "Cafetería" | "Bar" | "Otro";
 export type Palette = "oliva" | "terracota" | "oceano" | "ciruela" | "carbon";
 
 export const PLANS: Record<Plan, { label: string; price: number; limit: number }> = {
-  basic: { label: "Esencial", price: 15000, limit: 100 },
-  premium: { label: "Premium", price: 25000, limit: 200 },
+  basic: { label: "Esencial", price: 10000, limit: 100 },
+  premium: { label: "Premium", price: 18000, limit: 200 },
 };
 
 export const PALETTES: Record<Palette, { label: string; primary: string; accent: string }> = {
@@ -30,6 +30,7 @@ export type Restaurant = {
   orders_enabled: boolean;
   is_enabled: boolean;
   paid_until: string | null;
+  is_trial?: boolean;
   created_at: string;
   product_count?: number;
   owner_email?: string;

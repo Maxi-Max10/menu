@@ -6,9 +6,9 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 
 - **Administrador:** crea locales y accesos, cambia planes, pausa cuentas y registra cuotas mensuales manualmente.
 - **Cada local:** edita nombre, descripción, logo, contacto y una de cinco paletas; carga productos con foto, precio, categoría y disponibilidad.
-- **Esencial:** $15.000 ARS al mes, hasta 100 productos.
-- **Premium:** $25.000 ARS al mes, hasta 200 productos, destacados, precios promocionales, carrito con pedido por WhatsApp y métricas de la carta.
-- **Carta pública:** `/menu/slug-del-local`. Si la cuota venció o el administrador pausó la cuenta, la carta deja de mostrar los productos.
+- **Esencial:** primer mes gratis para locales nuevos; después $10.000 ARS al mes, hasta 100 productos.
+- **Premium:** primer mes gratis para locales nuevos; después $18.000 ARS al mes, hasta 200 productos, destacados, precios promocionales, carrito con pedido por WhatsApp y métricas de la carta.
+- **Carta pública:** `/menu/slug-del-local`. Si venció la prueba o la cuota, o el administrador pausó la cuenta, la carta deja de mostrar los productos.
 - **QR en ambos planes:** cada local puede descargar el código de su carta en PNG o SVG y copiar su enlace desde la pestaña «QR y enlace». El QR conserva su dirección cuando se editan los productos.
 
 ## Preparación
@@ -16,7 +16,7 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 1. Creá una base PostgreSQL. Puede ser cualquier proveedor accesible desde Vercel.
 2. Copiá `.env.example` a `.env.local` y completá las variables. Generá `AUTH_SECRET` con al menos 32 caracteres aleatorios. El correo y la contraseña `ADMIN_*` son el acceso del administrador principal. Para desarrollo local, dejá `NEXT_PUBLIC_SITE_URL` vacío; los QR usarán el origen local.
 3. Ejecutá `npm install` y `npm run dev`. Abrí `http://localhost:3000`.
-4. Ingresá en `/ingresar` con la cuenta administradora. Creá un local y registrá su primera cuota para publicar la carta.
+4. Ingresá en `/ingresar` con la cuenta administradora. Al crear un local, su carta se publica durante un mes calendario sin registrar pago. Al terminar la prueba, registrá la primera cuota para mantenerla publicada.
 
 Las tablas se crean automáticamente cuando se hace la primera consulta a la base. Las contraseñas de los locales se guardan con bcrypt y el acceso se mantiene mediante una cookie firmada, HTTP only.
 
@@ -29,6 +29,7 @@ Para recibir pedidos, el local Premium debe cargar su número con código de pa�
 ## Notas operativas
 
 - El registro de cuota suma un mes calendario al vencimiento vigente, o desde el momento del pago si ya venció. Se guarda un asiento en `payments` con el importe del plan en ese momento.
+- El mes gratis empieza cuando el administrador crea un local nuevo y se aplica una sola vez en ambos planes. No modifica vencimientos de locales existentes ni genera un asiento en `payments`. Si se registra un pago durante la prueba, el mes pagado empieza al terminarla.
 - El plan Esencial no admite más de 100 productos. Al bajar de Premium se desactivan los pedidos, destacados y precios promocionales.
 - El panel Premium muestra visitas a la carta, vistas de productos y clics para abrir el pedido durante los últimos 30 días. Son señales de interés, no ventas confirmadas; `/demo` no genera eventos.
 - Esta versión no cobra automáticamente ni envía correos. El administrador acredita pagos manualmente y entrega las credenciales al local por su propio canal.

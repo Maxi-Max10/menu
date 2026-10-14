@@ -137,3 +137,25 @@ test("Premium owner can configure offers and see insights", async ({ page }) => 
   await expect(page.locator(".metrics-grid strong").last()).toHaveText("4");
   await expectNoPageOverflow(page);
 });
+
+test("new-account trial and updated prices are clear on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await expect(page.locator(".trial-badge")).toHaveCount(2);
+  await expect(page.locator(".price-card").first()).toContainText("10.000");
+  await expect(page.locator(".price-card").last()).toContainText("18.000");
+
+  const trialRestaurant = { ...restaurant, is_trial: true };
+  await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [trialRestaurant] } }));
+  await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant: trialRestaurant, products: [] } }));
+  await page.goto("/admin");
+  await expect(page.getByText("Prueba gratis")).toBeVisible();
+  await page.getByRole("button", { name: "Agregar local" }).click();
+  await expect(page.getByText("El primer mes es gratis", { exact: false })).toBeVisible();
+  await expect(page.getByRole("option", { name: "Esencial · $10.000/mes" })).toHaveCount(1);
+  await expect(page.getByRole("option", { name: "Premium · $18.000/mes" })).toHaveCount(1);
+  await page.goto("/panel");
+  await expect(page.getByText("Tu primer mes gratis está activo")).toBeVisible();
+  await expect(page.getByText(/Después cuesta.*18.000/)).toBeVisible();
+  await expectNoPageOverflow(page);
+});

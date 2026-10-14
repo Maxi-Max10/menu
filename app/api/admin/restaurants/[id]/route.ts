@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/auth";
 import { query, transaction } from "@/lib/db";
 import { apiError, unauthorized } from "@/lib/api";
 import { PLANS, type Restaurant } from "@/lib/types";
+import { nextPeriodEnd } from "@/lib/billing";
 
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("set-enabled"), enabled: z.boolean() }),
@@ -39,8 +40,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         const found = await client.query<Restaurant>("SELECT * FROM restaurants WHERE id = $1 FOR UPDATE", [id]);
         const restaurant = found.rows[0];
         if (!restaurant) return "missing";
-        const currentEnd = restaurant.paid_until && new Date(restaurant.paid_until).getTime() > Date.now() ? new Date(restaurant.paid_until) : new Date();
-        const nextEnd = addCalendarMonth(currentEnd);
+        const nextEnd = nextPeriodEnd(restaurant.paid_until ? new Date(restaurant.paid_until) : null);
         await client.query("UPDATE restaurants SET paid_until = $1, is_enabled = true WHERE id = $2", [nextEnd, id]);
         await client.query("INSERT INTO payments (id, restaurant_id, amount, period_end, note) VALUES ($1, $2, $3, $4, $5)", [randomUUID(), id, PLANS[restaurant.plan].price, nextEnd, data.note || ""]);
         return "ok";
@@ -49,14 +49,4 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     }
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }
-}
-
-function addCalendarMonth(date: Date) {
-  const next = new Date(date);
-  const day = next.getUTCDate();
-  next.setUTCDate(1);
-  next.setUTCMonth(next.getUTCMonth() + 1);
-  const lastDay = new Date(Date.UTC(next.getUTCFullYear(), next.getUTCMonth() + 1, 0)).getUTCDate();
-  next.setUTCDate(Math.min(day, lastDay));
-  return next;
 }

@@ -10,7 +10,7 @@ export async function GET() {
   if (!session?.restaurantId) return unauthorized();
   try {
     const [restaurant, products, events, topProducts] = await Promise.all([
-      query<Restaurant>("SELECT * FROM restaurants WHERE id = $1", [session.restaurantId]),
+      query<Restaurant>("SELECT r.*, (r.paid_until IS NOT NULL AND NOT EXISTS (SELECT 1 FROM payments pay WHERE pay.restaurant_id = r.id)) AS is_trial FROM restaurants r WHERE r.id = $1", [session.restaurantId]),
       query<Product>("SELECT * FROM products WHERE restaurant_id = $1 ORDER BY category, created_at", [session.restaurantId]),
       query<{ kind: string; count: string }>("SELECT kind, COUNT(*)::text AS count FROM menu_events WHERE restaurant_id = $1 AND created_at >= now() - interval '30 days' GROUP BY kind", [session.restaurantId]),
       query<{ product_id: string; name: string; views: string }>("SELECT e.product_id, p.name, COUNT(*)::text AS views FROM menu_events e JOIN products p ON p.id = e.product_id WHERE e.restaurant_id = $1 AND e.kind = 'product_view' AND e.created_at >= now() - interval '30 days' GROUP BY e.product_id, p.name ORDER BY COUNT(*) DESC LIMIT 5", [session.restaurantId]),

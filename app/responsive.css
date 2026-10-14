@@ -133,6 +133,10 @@ html {
 
 /* Premium ordering and menu insights */
 .feature-plate svg { color: #d7a967; }
+.price-card .price { margin-bottom: 10px; }
+.price-card .price span { display: block; margin-top: 5px; }
+.trial-badge { display: inline-flex; align-items: center; border-radius: 30px; background: #e9f2e3; color: #315a3b; padding: 7px 12px; margin-bottom: 18px; font-size: 11px; font-weight: 800; }
+.price-featured .trial-badge { background: #f1dfbb; color: #284938; }
 .menu-product-labels { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
 .product-badge { display: inline-flex; align-items: center; border-radius: 30px; padding: 3px 7px; background: #edf2e7; color: #406748; font-size: 9px; font-weight: 800; }
 .product-badge.promo { background: #fff0dc; color: #986b2d; }
