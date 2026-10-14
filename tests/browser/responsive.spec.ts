@@ -167,6 +167,9 @@ test("mobile pages and restaurant forms fit the viewport", async ({ page }, test
   await page.setViewportSize({ width: 375, height: 812 });
   await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [] } }));
   await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [] } }));
+  await page.goto("/ingresar");
+  await expect(page.getByText("¿Todavía no tenés cuenta?")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Elegí tu plan" })).toHaveAttribute("href", "/#planes");
   for (const path of ["/", "/ingresar"]) {
     await page.goto(path);
     await expect(page.getByRole("heading").first()).toBeVisible();
