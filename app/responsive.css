@@ -3,7 +3,12 @@ html {
   text-size-adjust: 100%;
 }
 
-.brand-icon svg { display: block; width: 72%; height: 72%; }
+.brand { flex-shrink: 0; line-height: 0; }
+.polo-logo { display: block; width: 148px; height: 44px; }
+.powered .polo-logo { width: 88px; height: auto; }
+@media (max-width: 520px) {
+  .site-header .polo-logo, .panel-mobile-head .polo-logo { width: 134px; height: 40px; }
+}
 .panel-topline > span { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .panel-heading h1, .panel-product-info strong { overflow-wrap: anywhere; }
 .identity-fields, .identity-side, .form-grid > label { min-width: 0; }
