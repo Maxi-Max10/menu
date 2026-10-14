@@ -31,7 +31,7 @@ Para usar modelos 3D, cada producto Premium necesita la URL pública HTTPS de su
 - El registro de cuota suma un mes calendario al vencimiento vigente, o desde el momento del pago si ya venció. Se guarda un asiento en `payments` con el importe del plan en ese momento.
 - El plan Esencial no admite más de 100 productos ni modelos 3D. Para bajar de Premium, primero hay que cumplir esos límites.
 - Esta versión no cobra automáticamente ni envía correos. El administrador acredita pagos manualmente y entrega las credenciales al local por su propio canal.
-- `/demo` contiene una carta ilustrativa sin datos reales.
+- `/demo` contiene una carta ilustrativa sin datos reales, con tres fotos de productos y unas brochetas que permiten probar el visor 3D.
 
 ## Comandos
 

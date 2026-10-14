@@ -68,8 +68,25 @@ test("mobile menu search and categories remain usable", async ({ page }) => {
   await expect(page.locator(".empty-products")).toBeVisible();
   await page.getByLabel("Buscar productos").fill("");
   await page.getByRole("tab", { name: "Todo", exact: true }).click();
-  await expect(page.locator(".menu-product")).toHaveCount(6);
+  await expect(page.locator(".menu-product")).toHaveCount(9);
   await expectNoPageOverflow(page);
+});
+
+test("example menu displays its photos and opens the 3D dish", async ({ page }) => {
+  await page.goto("/demo");
+  for (const dish of ["Ensalada de estación", "Hamburguesa de la casa", "Pasta al pesto"]) {
+    const photo = page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: dish }) }).locator("img");
+    await expect(photo).toBeVisible();
+    await expect.poll(() => photo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+  }
+
+  await page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: "Brochetas de la casa" }) }).getByRole("button", { name: "Ver en 3D / AR" }).click();
+  const dialog = page.getByRole("dialog", { name: "Vista 3D de Brochetas de la casa" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("model-viewer")).toHaveAttribute("src", "/menu-examples/brochetas.glb");
+  await expect.poll(() => dialog.locator("model-viewer").evaluate((viewer) => (viewer as HTMLElement & { loaded?: boolean }).loaded)).toBe(true);
+  await dialog.getByRole("button", { name: "Cerrar" }).click();
+  await expect(dialog).toHaveCount(0);
 });
 
 test("mobile pages and restaurant forms fit the viewport", async ({ page }, testInfo) => {
