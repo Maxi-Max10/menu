@@ -16,6 +16,7 @@ export function MenuView({ restaurant, products, demo = false }: { restaurant: R
   const viewed = useRef(new Set<string>());
   const premium = restaurant.plan === "premium";
   const canOrder = premium && (demo || (restaurant.orders_enabled && !!restaurant.whatsapp.replace(/\D/g, "")));
+  const coverProduct = premium ? (products.find((product) => product.featured && product.image_data) || products.find((product) => product.image_data)) : undefined;
   const categories = ["Todo", ...new Set(products.map((p) => p.category))];
   const shown = useMemo(() => products.filter((p) => (category === "Todo" || p.category === category) && `${p.name} ${p.description}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => Number(premium && b.featured) - Number(premium && a.featured)), [products, category, search, premium]);
   const cartItems = products.filter((p) => cart[p.id] > 0).map((product) => ({ product, quantity: cart[product.id] }));
@@ -62,10 +63,17 @@ export function MenuView({ restaurant, products, demo = false }: { restaurant: R
     catch { setDemoCopied(false); }
   }
 
-  return <div className="menu-page" style={{ "--menu-primary": palette.primary, "--menu-accent": palette.accent } as React.CSSProperties}>
+  return <div className={`menu-page${premium ? " menu-premium" : ""}`} style={{ "--menu-primary": palette.primary, "--menu-accent": palette.accent } as React.CSSProperties}>
     {demo && <div className="demo-ribbon"><span>VISTA DE EJEMPLO · PLAN {premium ? "PREMIUM" : "ESENCIAL"}</span><Link href="/"><ArrowLeft size={15} /> Volver a Polo.</Link></div>}
     <header className="menu-topbar"><div className="menu-wrap menu-topbar-inner"><span>LA CARTA</span><span>HECHA PARA DISFRUTAR <BrandMark /></span></div></header>
-    <section className="menu-cover"><div className="menu-wrap menu-cover-inner"><div className="menu-logo">{restaurant.logo_data ? <img src={restaurant.logo_data} alt={`Logo de ${restaurant.name}`} /> : restaurant.name.split(" ").map((word) => word[0]).slice(0, 2).join("")}</div><div className="menu-cover-copy"><span className="menu-kicker">BIENVENIDOS A</span><h1>{restaurant.name}</h1><p>{restaurant.description || "Un momento para disfrutar."}</p></div><BrandMark className="menu-cover-mark" /></div></section>
+    <section className="menu-cover">
+      {coverProduct?.image_data && <div className="menu-cover-photo" aria-hidden="true"><img src={coverProduct.image_data} alt="" /></div>}
+      <div className="menu-wrap menu-cover-inner">
+        <div className="menu-logo">{restaurant.logo_data ? <img src={restaurant.logo_data} alt={`Logo de ${restaurant.name}`} /> : restaurant.name.split(" ").map((word) => word[0]).slice(0, 2).join("")}</div>
+        <div className="menu-cover-copy"><span className="menu-kicker">BIENVENIDOS A</span><h1>{restaurant.name}</h1><p>{restaurant.description || "Un momento para disfrutar."}</p>{premium && <div className="menu-cover-invitation"><span />{canOrder ? "Elegí tus favoritos y armá tu pedido" : "Descubrí los sabores de la casa"}</div>}</div>
+        <BrandMark className="menu-cover-mark" />
+      </div>
+    </section>
     <main className="menu-wrap menu-main"><div className="menu-heading"><div><span className="overline">EXPLORÁ NUESTRA CARTA</span><h2>Elegí algo <em>rico.</em></h2></div><div className="menu-search"><Search size={19} /><input aria-label="Buscar productos" placeholder="Buscar en la carta" value={search} onChange={(event) => setSearch(event.target.value)} /></div></div><div className="category-tabs" role="tablist" aria-label="Categorías">{categories.map((item) => <button role="tab" aria-selected={category === item} className={category === item ? "active" : ""} key={item} onClick={() => setCategory(item)}>{item}</button>)}</div><div className="menu-products">{shown.length ? shown.map((product, index) => {
       const promotional = premium && product.promo_price !== null && product.promo_price < product.price;
       return <article className="menu-product" data-product-id={product.id} key={product.id}><div className={`menu-product-art art-${index % 4}`}>{product.image_data ? <img src={product.image_data} alt={product.name} /> : product.category === "Bebidas" ? <Coffee /> : product.category === "Postres" ? <CakeSlice /> : <BrandMark />}</div><div className="menu-product-body"><div className="menu-product-labels"><span className="product-category">{product.category}</span>{premium && product.featured && <span className="product-badge">Destacado</span>}{promotional && <span className="product-badge promo">Oferta</span>}</div><h3>{product.name}</h3><p>{product.description}</p><div className="menu-product-foot"><div className="menu-price">{promotional && <s>{formatMoney(product.price)}</s>}<strong>{formatMoney(premium ? sellingPrice(product) : product.price)}</strong></div>{canOrder && <button type="button" className="add-to-cart" onClick={() => adjust(product.id, 1)}><Plus size={16} /> Agregar</button>}</div></div></article>;

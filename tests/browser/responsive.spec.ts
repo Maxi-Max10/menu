@@ -74,7 +74,7 @@ test("mobile menu search and categories remain usable", async ({ page }) => {
 
 test("example Premium menu shows a promotion and builds a cart", async ({ page }) => {
   await page.goto("/demo");
-  for (const dish of ["Ensalada de estación", "Hamburguesa de la casa", "Pasta al pesto", "Torta de chocolate y frutillas"]) {
+  for (const dish of ["Ensalada de estación", "Burrata de estación", "Croquetas de hongos", "Hamburguesa de la casa", "Pasta al pesto", "Brochetas de la casa", "Risotto de hongos", "Limonada de menta", "Torta de chocolate y frutillas"]) {
     const photo = page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: dish }) }).locator("img");
     await expect(photo).toBeVisible();
     await expect.poll(() => photo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
@@ -100,6 +100,7 @@ test("plan examples show ordering only in Premium", async ({ page }) => {
   await page.locator(".price-card").first().getByRole("link", { name: "Ver carta Esencial" }).click();
   await expect(page).toHaveURL(/\/demo\/esencial$/);
   await expect(page.locator(".demo-ribbon")).toContainText("PLAN ESENCIAL");
+  await expect(page.locator(".menu-page")).not.toHaveClass(/menu-premium/);
   await expect(page.locator(".menu-product")).toHaveCount(9);
   await expect(page.getByRole("button", { name: "Agregar", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Ver pedido/ })).toHaveCount(0);
@@ -111,6 +112,8 @@ test("plan examples show ordering only in Premium", async ({ page }) => {
   await page.locator(".price-card").last().getByRole("link", { name: "Probar carta Premium" }).click();
   await expect(page).toHaveURL(/\/demo$/);
   await expect(page.locator(".demo-ribbon")).toContainText("PLAN PREMIUM");
+  await expect(page.locator(".menu-page")).toHaveClass(/menu-premium/);
+  await expect(page.locator(".menu-cover-photo img")).toBeVisible();
   await expect(page.getByRole("button", { name: "Agregar", exact: true })).toHaveCount(9);
   await expect(page.getByRole("button", { name: /Ver pedido/ })).toBeVisible();
   const premiumSalad = page.locator(".menu-product").filter({ has: page.getByRole("heading", { name: "Ensalada de estación" }) });
