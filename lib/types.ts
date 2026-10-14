@@ -35,6 +35,7 @@ export type Restaurant = {
   created_at: string;
   product_count?: number;
   owner_email?: string;
+  owner_phone?: string | null;
 };
 
 export type Product = {

@@ -45,6 +45,15 @@ test("logging out removes access to the admin panel", async ({ page }) => {
   await expect(page.locator(".panel-layout")).toHaveCount(0);
 });
 
+test("admin sees the owner's signup phone", async ({ page }) => {
+  await signInForBrowserTest(page, "admin");
+  await page.route("**/api/admin/restaurants", route => route.fulfill({ json: {
+    restaurants: [{ ...restaurant, owner_email: "nuevo@example.com", owner_phone: "+54 9 11 1234-5678", product_count: 0 }],
+  } }));
+  await page.goto("/admin");
+  await expect(page.getByText("Tel.: +54 9 11 1234-5678")).toBeVisible();
+});
+
 async function expectNoPageOverflow(page: Page) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }
@@ -242,9 +251,14 @@ test("new-account trial and updated prices are clear on mobile", async ({ page }
   await expectNoPageOverflow(page);
 });
 
-test("signup from login lets a local choose its plan", async ({ page }) => {
+test("signup from login lets a local choose its plan and contact phone", async ({ page, request }) => {
+  const invalidPhone = await request.post("/api/auth/register", {
+    headers: { Origin: "http://localhost:3001" },
+    data: { name: "Café Nuevo", type: "Cafetería", plan: "premium", email: "nuevo@example.com", phone: "123", password: "claveSegura123" },
+  });
+  expect(invalidPhone.status()).toBe(400);
   await page.route("**/api/auth/register", async (route) => {
-    expect(route.request().postDataJSON()).toMatchObject({ plan: "premium", email: "nuevo@example.com" });
+    expect(route.request().postDataJSON()).toMatchObject({ plan: "premium", email: "nuevo@example.com", phone: "+54 9 11 1234-5678" });
     await route.fulfill({ status: 202, json: { message: "Solicitud recibida" } });
   });
   await page.goto("/ingresar");
@@ -255,6 +269,7 @@ test("signup from login lets a local choose its plan", async ({ page }) => {
   await expect(page.getByText(/18\.000 por mes/)).toBeVisible();
   await page.getByLabel("Nombre del local").fill("Café Nuevo");
   await page.getByLabel("Correo electrónico").fill("nuevo@example.com");
+  await page.getByLabel("Número de teléfono").fill("+54 9 11 1234-5678");
   await page.getByLabel("Contraseña", { exact: true }).fill("claveSegura123");
   await page.getByLabel("Repetir contraseña").fill("claveSegura123");
   await page.getByRole("button", { name: "Empezar gratis" }).click();
@@ -281,6 +296,7 @@ test("each plan opens signup and a new request stays pending", async ({ page, re
   await page.getByLabel("Nombre del local").fill("Café Nuevo");
   await page.getByLabel("Tipo de local").selectOption("Cafetería");
   await page.getByLabel("Correo electrónico").fill("nuevo@example.com");
+  await page.getByLabel("Número de teléfono").fill("+54 9 11 1234-5678");
   await page.getByLabel("Contraseña", { exact: true }).fill("claveSegura123");
   await page.getByLabel("Repetir contraseña").fill("claveSegura123");
   await page.getByRole("button", { name: "Empezar gratis" }).click();

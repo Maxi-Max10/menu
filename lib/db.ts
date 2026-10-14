@@ -41,6 +41,7 @@ export async function ensureSchema() {
           id uuid PRIMARY KEY,
           restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
           email text NOT NULL UNIQUE,
+          phone text,
           password_hash text NOT NULL,
           email_verified_at timestamptz,
           created_at timestamptz NOT NULL DEFAULT now()
@@ -87,6 +88,7 @@ export async function ensureSchema() {
         ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS orders_enabled boolean NOT NULL DEFAULT false;
         ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS signup_status text NOT NULL DEFAULT 'active';
         ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at timestamptz;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS phone text;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS featured boolean NOT NULL DEFAULT false;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS promo_price integer;
         CREATE INDEX IF NOT EXISTS products_restaurant_idx ON products(restaurant_id);

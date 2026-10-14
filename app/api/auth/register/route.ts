@@ -6,13 +6,14 @@ import { z } from "zod";
 import { apiError, readJsonLimited, rejectCrossOrigin } from "@/lib/api";
 import { query, transaction } from "@/lib/db";
 import { consumeRateLimit, requestIp } from "@/lib/rate-limit";
-import { passwordSchema } from "@/lib/validation";
+import { passwordSchema, phoneSchema } from "@/lib/validation";
 
 const schema = z.object({
   name: z.string().trim().min(2).max(80),
   type: z.enum(["Restaurante", "Cafetería", "Bar", "Otro"]),
   plan: z.enum(["basic", "premium"]),
   email: z.string().trim().email().max(254),
+  phone: phoneSchema,
   password: passwordSchema,
 });
 
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
     const slug = `${slugify(data.name)}-${randomBytes(4).toString("hex")}`;
     await transaction(async (client) => {
       await client.query("INSERT INTO restaurants (id, name, slug, type, plan, is_enabled, signup_status) VALUES ($1, $2, $3, $4, $5, false, 'pending')", [restaurantId, data.name, slug, data.type, data.plan]);
-      await client.query("INSERT INTO users (id, restaurant_id, email, password_hash) VALUES ($1, $2, $3, $4)", [userId, restaurantId, email, passwordHash]);
+      await client.query("INSERT INTO users (id, restaurant_id, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5)", [userId, restaurantId, email, data.phone, passwordHash]);
       await client.query("INSERT INTO email_verifications (user_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '24 hours')", [userId, tokenHash]);
     });
     try { await sendVerification(email, token); }

@@ -13,6 +13,7 @@ export function RegisterForm({ initialPlan }: { initialPlan?: Plan }) {
   const [name, setName] = useState("");
   const [type, setType] = useState<VenueType>("Restaurante");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,7 +28,7 @@ export function RegisterForm({ initialPlan }: { initialPlan?: Plan }) {
     setBusy(true);
     setError("");
     try {
-      await api("/api/auth/register", { method: "POST", body: JSON.stringify({ name, type, plan, email, password }) });
+      await api("/api/auth/register", { method: "POST", body: JSON.stringify({ name, type, plan, email, phone, password }) });
       setDone(true);
     } catch (issue) {
       setError(issue instanceof Error ? issue.message : "No se pudo enviar la solicitud");
@@ -65,6 +66,7 @@ export function RegisterForm({ initialPlan }: { initialPlan?: Plan }) {
         <label>Nombre del local<input required minLength={2} maxLength={80} autoComplete="organization" value={name} onChange={(event) => setName(event.target.value)} placeholder="Ej. Café del Parque" /></label>
         <label>Tipo de local<select value={type} onChange={(event) => setType(event.target.value as VenueType)}><option>Restaurante</option><option>Cafetería</option><option>Bar</option><option>Otro</option></select></label>
         <label>Correo electrónico<input type="email" required maxLength={254} autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="tu@correo.com" /></label>
+        <label>Número de teléfono<input type="tel" required minLength={8} maxLength={30} autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+54 9 11 1234-5678" /></label>
         <label>Contraseña<input type="password" required minLength={10} maxLength={72} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo 10 caracteres" /></label>
         <label>Repetir contraseña<input type="password" required minLength={10} maxLength={72} autoComplete="new-password" value={confirm} onChange={(event) => setConfirm(event.target.value)} /></label>
         {error && <div className="form-error" role="alert">{error}</div>}

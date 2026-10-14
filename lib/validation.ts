@@ -3,6 +3,9 @@ import { z } from "zod";
 export const imageSchema = z.string().max(450_000).regex(/^data:image\/(png|jpeg|webp);base64,/).nullable().optional();
 export const passwordSchema = z.string().min(10, "Usá al menos 10 caracteres").max(72)
   .refine((value) => new TextEncoder().encode(value).length <= 72, "La contraseña no puede superar 72 bytes");
+export const phoneSchema = z.string().trim().max(30)
+  .regex(/^\+?[0-9][0-9 ()-]*$/, "Ingresá un número de teléfono válido")
+  .refine((value) => { const digits = value.replace(/\D/g, "").length; return digits >= 8 && digits <= 15; }, "Ingresá entre 8 y 15 dígitos");
 export const restaurantCreateSchema = z.object({
   name: z.string().trim().min(2).max(80),
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(60),
