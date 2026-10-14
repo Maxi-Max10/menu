@@ -8,3 +8,5 @@ tsconfig.tsbuildinfo
 mesa-vercel.zip
 .agents/
 skills-lock.json
+test-results/
+playwright-report/

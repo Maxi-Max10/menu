@@ -39,6 +39,9 @@ Para usar modelos 3D, cada producto Premium necesita la URL pública HTTPS de su
 npm run dev
 npm run typecheck
 npm run test:qr
+npm run test:browsers
 npm run build
 npm start
 ```
+
+Las pruebas de navegadores verifican el menú y los formularios en Chromium, Firefox y WebKit, incluyendo vistas móviles de iPhone y Android. Antes de ejecutarlas por primera vez, instalá los motores con `npx playwright install chromium firefox webkit`. El flujo de GitHub Actions ejecuta estas verificaciones en Linux en cada actualización de `main` y cada pull request.
