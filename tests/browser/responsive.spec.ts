@@ -4,7 +4,7 @@ import { SignJWT } from "jose";
 const logo = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200"><rect width="1200" height="1200" fill="#246e3f"/><path d="M600 200v800M200 600h800M317 317l566 566M883 317 317 883" stroke="white" stroke-width="110"/></svg>')}`;
 const restaurant = {
   id: "browser-fixture", name: "Cafetería del Parque y Cocina de Encuentros", slug: "cafe-del-parque",
-  type: "Cafetería", plan: "premium", palette: "oliva", logo_data: logo,
+  type: "Cafetería", plan: "premium", palette: "oliva", custom_primary: null, custom_accent: null, logo_data: logo,
   description: "Café y sabores para compartir.", address: "Buenos Aires", instagram: "", whatsapp: "5491112345678", orders_enabled: true,
   is_enabled: true, paid_until: "2099-01-01", created_at: "2026-01-01",
 };
@@ -136,9 +136,12 @@ test("example Premium menu shows a promotion and builds a cart", async ({ page }
   await expect(dialog.locator(".cart-total strong")).toHaveText(/9.900/);
   await dialog.getByRole("button", { name: "Agregar Ensalada de estación" }).click();
   await expect(dialog.locator(".cart-total strong")).toHaveText(/19.800/);
-  await expect(dialog.getByRole("button", { name: "Copiar pedido de ejemplo" })).toBeVisible();
-  await dialog.getByRole("button", { name: "Cerrar pedido" }).click();
+  await dialog.getByLabel("Tu nombre").fill("Ana Pérez");
+  await dialog.getByLabel("Tu teléfono").fill("+54 9 261 123-4567");
+  await dialog.getByRole("button", { name: "Simular pedido" }).click();
   await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText("Pedido de ejemplo simulado.");
+  await expect(page.getByRole("status")).not.toContainText("19.800");
 });
 
 test("plan examples show ordering only in Premium", async ({ page }) => {
@@ -219,7 +222,7 @@ test("Premium owner can configure offers and see insights", async ({ page }) => 
   const product = { id: "11111111-1111-4111-8111-111111111111", restaurant_id: restaurant.id,
     name: "Plato de prueba", description: "", price: 2500, category: "Principales",
     image_data: null, model_url: null, featured: false, promo_price: null, available: true, created_at: "2026-01-01" };
-  await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [product], metrics: { visits: 15, productViews: 30, orderClicks: 4, topProducts: [{ product_id: product.id, name: product.name, views: 12 }] } } }));
+  await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [product], metrics: { visits: 15, productViews: 30, ordersReceived: 4, topProducts: [{ product_id: product.id, name: product.name, views: 12 }] } } }));
   await signInForBrowserTest(page, "restaurant");
   await page.goto("/panel");
   await page.getByRole("button", { name: "Editar" }).click();
@@ -228,9 +231,68 @@ test("Premium owner can configure offers and see insights", async ({ page }) => 
   await page.getByLabel("Precio promocional en ARS (opcional)").fill("2000");
   await page.getByRole("button", { name: "Cerrar", exact: true }).click();
   await page.getByRole("button", { name: "Resultados" }).click();
-  await expect(page.getByText("CLICS PARA PEDIR")).toBeVisible();
+  await expect(page.getByText("PEDIDOS RECIBIDOS", { exact: true })).toBeVisible();
   await expect(page.locator(".metrics-grid strong").last()).toHaveText("4");
   await expectNoPageOverflow(page);
+});
+
+test("owner can save a custom two-color palette", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  let saved = { ...restaurant };
+  await page.route("**/api/dashboard", async (route) => {
+    if (route.request().method() === "PATCH") {
+      const data = route.request().postDataJSON();
+      expect(data).toMatchObject({ palette: "personalizado", custom_primary: "#195273", custom_accent: "#E6A83B" });
+      saved = { ...saved, ...data };
+      await route.fulfill({ json: { ok: true } });
+      return;
+    }
+    await route.fulfill({ json: { restaurant: saved, products: [] } });
+  });
+  await signInForBrowserTest(page, "restaurant");
+  await page.goto("/panel");
+  await page.getByRole("button", { name: "Identidad del local" }).click();
+  await page.getByRole("button", { name: "Paleta personalizada" }).click();
+  await page.getByRole("textbox", { name: "Hexadecimal principal" }).fill("#195273");
+  await page.getByRole("textbox", { name: "Hexadecimal de acento" }).fill("#E6A83B");
+  await expect(page.locator(".palette-preview")).toHaveCSS("color", "rgb(255, 255, 255)");
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByRole("button", { name: "Paleta personalizada" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("textbox", { name: "Hexadecimal principal" })).toHaveValue("#195273");
+  await expectNoPageOverflow(page);
+});
+
+test("Premium owner sees today's orders and can update their status", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const orderId = "22222222-2222-4222-8222-222222222222";
+  await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [] } }));
+  await page.route("**/api/orders", route => route.fulfill({ json: { orders: [{
+    id: orderId, restaurant_id: restaurant.id, customer_name: "Ana Pérez", customer_phone: "+54 9 261 123-4567",
+    notes: "Sin cebolla", total: 22800, status: "new", created_at: "2026-10-14T18:30:00Z",
+    items: [{ product_id: null, product_name: "Ensalada", unit_price: 9900, quantity: 2, line_total: 19800 }, { product_id: null, product_name: "Limonada", unit_price: 3000, quantity: 1, line_total: 3000 }],
+  }] } }));
+  await page.route("**/api/orders/*", async (route) => {
+    expect(route.request().postDataJSON()).toEqual({ status: "preparing" });
+    await route.fulfill({ json: { ok: true } });
+  });
+  await signInForBrowserTest(page, "restaurant");
+  await page.goto("/panel");
+  await page.getByRole("button", { name: "Pedidos" }).click();
+  await expect(page.getByRole("heading", { name: "Pedidos de hoy" })).toBeVisible();
+  await expect(page.locator(".order-card")).toContainText("Ana Pérez");
+  await expect(page.locator(".order-card")).toContainText("22.800");
+  await expect(page.locator(".order-card")).toContainText("Sin cebolla");
+  await page.getByLabel(`Estado del pedido ${orderId.slice(0, 8)}`).selectOption("preparing");
+  await expect(page.getByLabel(`Estado del pedido ${orderId.slice(0, 8)}`)).toHaveValue("preparing");
+  await expectNoPageOverflow(page);
+});
+
+test("public order endpoint rejects invalid and cross-site submissions", async ({ request }) => {
+  const data = { restaurantId: "11111111-1111-4111-8111-111111111111", customerName: "Ana Pérez", customerPhone: "+54 9 261 123-4567", notes: "", items: [] };
+  const invalid = await request.post("/api/orders", { headers: { Origin: "http://localhost:3001" }, data });
+  expect(invalid.status()).toBe(400);
+  const crossSite = await request.post("/api/orders", { headers: { Origin: "https://otro-sitio.example" }, data });
+  expect(crossSite.status()).toBe(403);
 });
 
 test("new-account trial and updated prices are clear on mobile", async ({ page }) => {

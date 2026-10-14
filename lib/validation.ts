@@ -17,13 +17,18 @@ export const restaurantCreateSchema = z.object({
 export const brandingSchema = z.object({
   name: z.string().trim().min(2).max(80),
   type: z.enum(["Restaurante", "Cafetería", "Bar", "Otro"]),
-  palette: z.enum(["oliva", "terracota", "oceano", "ciruela", "carbon"]),
+  palette: z.enum(["oliva", "terracota", "oceano", "ciruela", "carbon", "personalizado"]),
+  custom_primary: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Ingresá un color hexadecimal válido").nullable().optional().default(null),
+  custom_accent: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Ingresá un color hexadecimal válido").nullable().optional().default(null),
   logo_data: imageSchema,
   description: z.string().trim().max(400),
   address: z.string().trim().max(180),
   instagram: z.string().trim().max(100),
   whatsapp: z.string().trim().max(40),
   orders_enabled: z.boolean(),
+}).refine((data) => data.palette !== "personalizado" || (!!data.custom_primary && !!data.custom_accent), {
+  message: "Elegí dos colores personalizados",
+  path: ["custom_primary"],
 });
 export const productSchema = z.object({
   name: z.string().trim().min(2).max(100),

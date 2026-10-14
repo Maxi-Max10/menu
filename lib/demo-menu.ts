@@ -7,6 +7,8 @@ export const demoRestaurant: Restaurant = {
   type: "Restaurante",
   plan: "premium",
   palette: "oliva",
+  custom_primary: null,
+  custom_accent: null,
   logo_data: null,
   description: "Cocina de todos los días, hecha para compartir.",
   address: "Palermo, Buenos Aires",

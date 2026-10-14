@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const hash = await bcrypt.hash(data.password, 12);
     const trialEndsAt = addCalendarMonth(new Date());
     await transaction(async (client) => {
-      await client.query("INSERT INTO restaurants (id, name, slug, type, plan, paid_until) VALUES ($1, $2, $3, $4, $5, $6)", [restaurantId, data.name, data.slug, data.type, data.plan, trialEndsAt]);
+      await client.query("INSERT INTO restaurants (id, name, slug, type, plan, paid_until, orders_enabled) VALUES ($1, $2, $3, $4, $5, $6, $7)", [restaurantId, data.name, data.slug, data.type, data.plan, trialEndsAt, data.plan === "premium"]);
       await client.query("INSERT INTO users (id, restaurant_id, email, password_hash) VALUES ($1, $2, $3, $4)", [userId, restaurantId, data.email.toLowerCase(), hash]);
     });
     return NextResponse.json({ id: restaurantId, trial_ends_at: trialEndsAt.toISOString() }, { status: 201 });

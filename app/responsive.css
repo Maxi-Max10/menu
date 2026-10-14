@@ -253,3 +253,58 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .menu-premium .menu-product, .menu-premium .menu-product-art img { transition: none; }
 }
+
+.palette-options { flex-wrap: wrap; }
+.custom-palette { margin-top: 17px; padding: 17px; border: 1px solid #e4e9df; border-radius: 9px; background: #fbfcf8; }
+.custom-palette > p { margin: 0 0 15px; color: #647668; font-size: 12px; line-height: 1.5; }
+.custom-color-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.custom-color-field > span { display: block; margin-bottom: 7px; color: #425d49; font-size: 12px; font-weight: 700; }
+.custom-color-controls { display: flex; align-items: center; gap: 8px; }
+.identity-section .custom-color-controls input[type="color"] { flex: 0 0 46px; width: 46px; height: 43px; padding: 3px; margin: 0; cursor: pointer; }
+.identity-section .custom-color-controls input[type="text"] { flex: 1; min-width: 0; margin: 0; font-family: ui-monospace, monospace; text-transform: uppercase; }
+.palette-preview { display: flex; align-items: center; flex-wrap: wrap; gap: 9px 14px; min-height: 92px; margin-top: 15px; padding: 16px; border-radius: 8px; background: linear-gradient(115deg, var(--preview-primary) 68%, color-mix(in srgb, var(--preview-primary) 55%, var(--preview-accent))); color: var(--preview-text); }
+.palette-preview span { width: 100%; font-size: 9px; font-weight: 800; letter-spacing: .16em; }
+.palette-preview strong { flex: 1; min-width: 0; font: 600 22px Georgia, serif; overflow-wrap: anywhere; }
+.palette-preview em { padding: 8px 11px; border-radius: 5px; background: var(--preview-accent); color: var(--preview-accent-text); font-size: 11px; font-style: normal; font-weight: 800; }
+.menu-custom .menu-cover { background: linear-gradient(115deg, var(--menu-primary) 70%, color-mix(in srgb, var(--menu-primary) 60%, var(--menu-accent))); }
+.menu-page .menu-topbar, .menu-page .menu-cover, .menu-page .menu-footer { color: var(--menu-on-primary); }
+.menu-page .menu-cover p { color: var(--menu-on-primary); opacity: .84; }
+.menu-page .category-tabs button.active, .menu-page .add-to-cart, .menu-page .cart-fab { color: var(--menu-on-primary); }
+.menu-page .cart-fab b { color: var(--menu-on-accent); }
+.menu-page .menu-price strong, .menu-page .menu-product-foot > strong { color: var(--menu-primary-ink); }
+@media (max-width: 520px) { .custom-color-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.checkout-form label { display: block; margin: 0 0 13px; color: #425d49; font-size: 12px; font-weight: 700; }
+.checkout-form input, .checkout-form textarea { display: block; width: 100%; min-height: 42px; margin-top: 6px; padding: 10px 12px; border: 1px solid #dbe2d8; border-radius: 6px; background: white; color: #263b33; outline: none; font-size: 14px; }
+.checkout-form textarea { min-height: 64px; resize: vertical; }
+.checkout-form input:focus, .checkout-form textarea:focus { border-color: #5b8963; box-shadow: 0 0 0 3px #5b896322; }
+.checkout-form .form-error { margin-bottom: 12px; }
+.order-confirmation { position: fixed; z-index: 30; top: 20px; right: 20px; display: flex; align-items: flex-start; gap: 15px; width: min(390px, calc(100vw - 32px)); padding: 16px; border: 1px solid #b9d6bc; border-radius: 9px; background: #f4fff3; box-shadow: 0 13px 35px #14291d35; color: #25462d; }
+.order-confirmation strong { display: block; margin-bottom: 5px; font-size: 14px; }
+.order-confirmation p { margin: 0; font-size: 12px; line-height: 1.5; }
+.order-confirmation button { flex: 0 0 auto; padding: 2px; border: 0; background: transparent; color: inherit; }
+.orders-section { padding: 25px; border: 1px solid #e5ebe2; border-radius: 10px; background: #fffefa; }
+.orders-help { margin: 4px 0 20px; color: #728274; font-size: 12px; line-height: 1.6; }
+.orders-disabled { margin: 0 0 18px; padding: 12px 14px; border-radius: 6px; background: #fff3dc; color: #66542d; font-size: 12px; }
+.orders-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+.orders-summary > div { min-width: 0; padding: 16px; border: 1px solid #e7ebe2; border-radius: 7px; background: #f8faf6; }
+.orders-summary span { display: block; margin-bottom: 8px; color: #829284; font-size: 10px; font-weight: 800; letter-spacing: .09em; }
+.orders-summary strong { font: 600 25px Georgia, serif; overflow-wrap: anywhere; }
+.orders-list { display: grid; gap: 14px; }
+.order-card { min-width: 0; padding: 19px; border: 1px solid #e3e9de; border-radius: 8px; background: #fff; }
+.order-card-head { display: flex; justify-content: space-between; gap: 16px; }
+.order-card-head > div { min-width: 0; }
+.order-card-head span { color: #819082; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.order-card-head h3 { margin: 7px 0 3px; font: 600 23px Georgia, serif; overflow-wrap: anywhere; }
+.order-card-head a { color: #315c40; font-size: 12px; text-decoration: underline; overflow-wrap: anywhere; }
+.order-card-head > strong { flex: 0 0 auto; color: #284938; font-size: 20px; }
+.order-card ul { display: grid; gap: 7px; margin: 17px 0; padding: 14px 0; border-top: 1px solid #edf0e9; border-bottom: 1px solid #edf0e9; list-style: none; }
+.order-card li { display: flex; justify-content: space-between; gap: 15px; font-size: 12px; }
+.order-card li > span { min-width: 0; overflow-wrap: anywhere; }
+.order-card li strong { flex: 0 0 auto; }
+.order-notes { margin: -4px 0 17px; color: #5a6f5e; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.order-card-foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.order-card-foot label { color: #67796b; font-size: 11px; font-weight: 700; }
+.order-card-foot select { display: block; min-width: 150px; margin-top: 5px; padding: 8px; border: 1px solid #ccd9cc; border-radius: 5px; background: #fff; color: #284938; }
+.order-card-foot > span { color: #89998a; font-size: 11px; }
+@media (max-width: 520px) { .orders-section { padding: 16px; } .orders-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .orders-summary > div:last-child { grid-column: 1 / -1; } .order-card-head { flex-wrap: wrap; } .order-card-head > strong { width: 100%; } }

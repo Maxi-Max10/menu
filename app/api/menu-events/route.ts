@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       LEFT JOIN products p ON p.id = $3 AND p.restaurant_id = r.id AND p.available = true
       WHERE r.id = $1 AND r.plan = 'premium' AND r.is_enabled = true AND r.paid_until >= now()
         AND ($2 <> 'product_view' OR p.id IS NOT NULL)
-        AND ($2 <> 'order_click' OR (r.orders_enabled = true AND regexp_replace(r.whatsapp, '[^0-9]', '', 'g') <> ''))
+        AND ($2 <> 'order_click' OR r.orders_enabled = true)
     `, [event.restaurantId, event.kind, event.productId || null]);
     if (!result.rowCount) return NextResponse.json({ error: "Evento no disponible" }, { status: 404 });
     return new NextResponse(null, { status: 204 });

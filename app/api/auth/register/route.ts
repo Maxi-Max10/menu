@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const tokenHash = createHash("sha256").update(token).digest("hex");
     const slug = `${slugify(data.name)}-${randomBytes(4).toString("hex")}`;
     await transaction(async (client) => {
-      await client.query("INSERT INTO restaurants (id, name, slug, type, plan, is_enabled, signup_status) VALUES ($1, $2, $3, $4, $5, false, 'pending')", [restaurantId, data.name, slug, data.type, data.plan]);
+      await client.query("INSERT INTO restaurants (id, name, slug, type, plan, is_enabled, signup_status, orders_enabled) VALUES ($1, $2, $3, $4, $5, false, 'pending', $6)", [restaurantId, data.name, slug, data.type, data.plan, data.plan === "premium"]);
       await client.query("INSERT INTO users (id, restaurant_id, email, phone, password_hash) VALUES ($1, $2, $3, $4, $5)", [userId, restaurantId, email, data.phone, passwordHash]);
       await client.query("INSERT INTO email_verifications (user_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '24 hours')", [userId, tokenHash]);
     });
