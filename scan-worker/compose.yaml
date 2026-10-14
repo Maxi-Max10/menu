@@ -1,0 +1,33 @@
+services:
+  worker:
+    build: .
+    restart: unless-stopped
+    gpus: all
+    environment:
+      SCAN_WORKER_SECRET: ${SCAN_WORKER_SECRET}
+      PUBLIC_BASE_URL: https://${SCAN_HOSTNAME}
+      POLO_CALLBACK_URL: ${POLO_ORIGIN}/api/scan-callback
+      POLO_ORIGIN: ${POLO_ORIGIN}
+      SCAN_DATA_DIR: /data
+    volumes:
+      - scan_data:/data
+    expose:
+      - "8080"
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    environment:
+      SCAN_HOSTNAME: ${SCAN_HOSTNAME}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - worker
+volumes:
+  scan_data:
+  caddy_data:
+  caddy_config:

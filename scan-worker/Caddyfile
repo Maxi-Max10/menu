@@ -1,0 +1,6 @@
+{$SCAN_HOSTNAME} {
+  request_body {
+    max_size 200MB
+  }
+  reverse_proxy worker:8080
+}

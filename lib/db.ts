@@ -58,8 +58,20 @@ export async function ensureSchema() {
           period_end timestamptz NOT NULL,
           note text NOT NULL DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS model_scans (
+          id uuid PRIMARY KEY,
+          restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+          product_id uuid NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+          status text NOT NULL DEFAULT 'awaiting_upload',
+          diameter_cm integer NOT NULL CHECK (diameter_cm BETWEEN 15 AND 45),
+          error text,
+          model_url text,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          updated_at timestamptz NOT NULL DEFAULT now()
+        );
         CREATE INDEX IF NOT EXISTS products_restaurant_idx ON products(restaurant_id);
         CREATE INDEX IF NOT EXISTS payments_restaurant_idx ON payments(restaurant_id);
+        CREATE INDEX IF NOT EXISTS model_scans_product_idx ON model_scans(product_id, created_at DESC);
       `);
     })().catch((error) => { globalForDb.menuSchemaReady = undefined; throw error; });
   }

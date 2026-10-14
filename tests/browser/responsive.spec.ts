@@ -118,3 +118,18 @@ test("mobile pages and restaurant forms fit the viewport", async ({ page }, test
   expect(modal!.x + modal!.width).toBeLessThanOrEqual(375);
   await page.screenshot({ path: testInfo.outputPath("product-form.png") });
 });
+
+test("Premium owner can open guided phone capture for a saved dish", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  const product = { id: "11111111-1111-4111-8111-111111111111", restaurant_id: restaurant.id,
+    name: "Plato de prueba", description: "", price: 2500, category: "Principales",
+    image_data: null, model_url: null, available: true, created_at: "2026-01-01" };
+  await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [product] } }));
+  await page.route("**/api/products/*/scans", route => route.fulfill({ json: { scan: null, enabled: true } }));
+  await page.goto("/panel");
+  await page.getByRole("button", { name: "Editar" }).click();
+  await expect(page.getByText("Crear 3D con el celular")).toBeVisible();
+  await expect(page.getByText("0 de 20 fotos mínimas")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generar modelo 3D" })).toBeDisabled();
+  await expectNoPageOverflow(page);
+});

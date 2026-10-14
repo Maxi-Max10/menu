@@ -26,6 +26,12 @@ Importá este directorio como proyecto Next.js. Configurá `DATABASE_URL`, `AUTH
 
 Para usar modelos 3D, cada producto Premium necesita la URL pública HTTPS de su archivo `.glb`. El archivo debe tener texturas realistas y medidas en metros (un plato suele medir entre 20 y 35 cm); la escala del GLB determina el tamaño en AR. El visor usa [model-viewer](https://modelviewer.dev/); la opción AR depende del navegador y del dispositivo.
 
+### Crear 3D desde el celular, sin procesadores externos
+
+El panel Premium incluye una captura guiada de 20 a 50 fotos para cada producto ya guardado. Las fotos se envían directamente a un servidor propio de Polo, que reconstruye la malla con COLMAP, aplica las texturas fotográficas y exporta un GLB con el diámetro indicado. El dueño puede revisar el resultado y publicarlo en su carta. Mientras el procesador no esté configurado, el panel lo indica y mantiene disponible la carga manual por URL.
+
+El procesador está en [`scan-worker/`](scan-worker/README.md). Se aloja aparte de Vercel en un servidor Linux con GPU NVIDIA, Docker, volumen persistente, dominio propio y HTTPS. No usa ninguna API de reconstrucción de terceros. Las fotos y el GLB quedan en el volumen de ese servidor. En Vercel configurá `SCAN_WORKER_URL` y `SCAN_WORKER_SECRET` con la URL HTTPS del procesador y el mismo secreto aleatorio de al menos 32 caracteres configurado allí. No habilites la captura hasta probar el pipeline completo con fotos de un plato real y revisar el GLB en iOS y Android.
+
 ## Notas operativas
 
 - El registro de cuota suma un mes calendario al vencimiento vigente, o desde el momento del pago si ya venció. Se guarda un asiento en `payments` con el importe del plan en ese momento.
