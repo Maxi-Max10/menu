@@ -24,7 +24,7 @@ export default function Home() {
         <div className="float-badge badge-top"><QrCode size={22} /><span>Escaneá.<br /><strong>Descubrí.</strong></span></div>
         <div className="phone-mockup">
           <div className="phone-notch" />
-          <div className="mock-header"><div className="mock-logo">CO</div><span>CASA OLIVA<small>COCINA DE TODOS LOS DÍAS</small></span></div>
+          <div className="mock-header"><div className="mock-logo">ML</div><span>MESA LUMA<small>COCINA DE TODOS LOS DÍAS</small></span></div>
           <div className="mock-hero"><div className="mock-dish"><span className="dish-leaf leaf-one" /><span className="dish-leaf leaf-two" /><span className="dish-leaf leaf-three" /><span className="dish-center" /></div></div>
           <div className="mock-content"><span className="mock-overline">NUESTRA CARTA</span><strong>Algo rico te espera.</strong><div className="mock-chips"><b>Todo</b><span>Para empezar</span><span>Principales</span></div><div className="mock-row"><span>Risotto de hongos<small>Cremoso, con parmesano</small></span><b>$ 16.500</b></div><div className="mock-row"><span>Ensalada de estación<small>Fresco de la huerta</small></span><b>$ 12.000</b></div></div>
         </div>

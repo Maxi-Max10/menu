@@ -2,7 +2,7 @@ import type { Product, Restaurant } from "@/lib/types";
 
 export const demoRestaurant: Restaurant = {
   id: "demo",
-  name: "Casa Oliva",
+  name: "Mesa Luma",
   slug: "demo",
   type: "Restaurante",
   plan: "premium",
@@ -10,7 +10,7 @@ export const demoRestaurant: Restaurant = {
   logo_data: null,
   description: "Cocina de todos los días, hecha para compartir.",
   address: "Palermo, Buenos Aires",
-  instagram: "casaoliva",
+  instagram: "mesaluma_ejemplo",
   whatsapp: "",
   orders_enabled: true,
   is_enabled: true,

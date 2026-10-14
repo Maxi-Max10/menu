@@ -100,6 +100,9 @@ test("plan examples show ordering only in Premium", async ({ page }) => {
   await page.locator(".price-card").first().getByRole("link", { name: "Ver carta Esencial" }).click();
   await expect(page).toHaveURL(/\/demo\/esencial$/);
   await expect(page.locator(".demo-ribbon")).toContainText("PLAN ESENCIAL");
+  await expect(page.getByRole("heading", { name: "Mesa Luma" })).toBeVisible();
+  await expect(page.locator(".menu-footer-links")).toContainText("@mesaluma_ejemplo · ejemplo");
+  await expect(page.locator('.menu-footer-links a[href*="instagram.com"]')).toHaveCount(0);
   await expect(page.locator(".menu-page")).not.toHaveClass(/menu-premium/);
   await expect(page.locator(".menu-product")).toHaveCount(9);
   await expect(page.getByRole("button", { name: "Agregar", exact: true })).toHaveCount(0);
@@ -112,6 +115,8 @@ test("plan examples show ordering only in Premium", async ({ page }) => {
   await page.locator(".price-card").last().getByRole("link", { name: "Probar carta Premium" }).click();
   await expect(page).toHaveURL(/\/demo$/);
   await expect(page.locator(".demo-ribbon")).toContainText("PLAN PREMIUM");
+  await expect(page.getByRole("heading", { name: "Mesa Luma" })).toBeVisible();
+  await expect(page.locator('.menu-footer-links a[href*="instagram.com"]')).toHaveCount(0);
   await expect(page.locator(".menu-page")).toHaveClass(/menu-premium/);
   await expect(page.locator(".menu-cover-photo img")).toBeVisible();
   await expect(page.getByRole("button", { name: "Agregar", exact: true })).toHaveCount(9);
