@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mesa — Cartas digitales para cada mesa",
+  title: "Polo — Cartas digitales para cada mesa",
+  applicationName: "Polo",
   description: "Creá una carta digital con tu identidad. Administrá productos, planes y pagos desde un solo lugar.",
 };
 

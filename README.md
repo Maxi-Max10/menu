@@ -1,4 +1,4 @@
-# Mesa
+# Polo
 
 Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista para desplegar en Vercel con Next.js y PostgreSQL.
 
