@@ -29,6 +29,7 @@ export type Restaurant = {
   whatsapp: string;
   orders_enabled: boolean;
   is_enabled: boolean;
+  signup_status: "pending" | "active";
   paid_until: string | null;
   is_trial?: boolean;
   created_at: string;

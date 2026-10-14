@@ -3,10 +3,12 @@ import { randomUUID } from "crypto";
 import { requireSession } from "@/lib/auth";
 import { transaction } from "@/lib/db";
 import { productSchema } from "@/lib/validation";
-import { apiError, unauthorized } from "@/lib/api";
+import { apiError, rejectCrossOrigin, unauthorized } from "@/lib/api";
 import { PLANS, type Plan } from "@/lib/types";
 
 export async function POST(request: Request) {
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) return rejected;
   const session = await requireSession("restaurant");
   if (!session?.restaurantId) return unauthorized();
   try {

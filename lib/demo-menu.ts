@@ -14,6 +14,7 @@ export const demoRestaurant: Restaurant = {
   whatsapp: "",
   orders_enabled: true,
   is_enabled: true,
+  signup_status: "active",
   paid_until: "2099-01-01",
   created_at: "2026-01-01",
 };

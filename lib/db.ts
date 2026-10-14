@@ -14,7 +14,11 @@ export async function ensureSchema() {
   if (!globalForDb.menuSchemaReady) {
     globalForDb.menuSchemaReady = (async () => {
       const db = getPool();
-      await db.query(`
+      const client = await db.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query("SELECT pg_advisory_xact_lock(20261014)");
+        await client.query(`
         CREATE TABLE IF NOT EXISTS restaurants (
           id uuid PRIMARY KEY,
           name text NOT NULL,
@@ -29,6 +33,7 @@ export async function ensureSchema() {
           whatsapp text NOT NULL DEFAULT '',
           orders_enabled boolean NOT NULL DEFAULT false,
           is_enabled boolean NOT NULL DEFAULT true,
+          signup_status text NOT NULL DEFAULT 'active',
           paid_until timestamptz,
           created_at timestamptz NOT NULL DEFAULT now()
         );
@@ -37,6 +42,7 @@ export async function ensureSchema() {
           restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
           email text NOT NULL UNIQUE,
           password_hash text NOT NULL,
+          email_verified_at timestamptz,
           created_at timestamptz NOT NULL DEFAULT now()
         );
         CREATE TABLE IF NOT EXISTS products (
@@ -68,13 +74,33 @@ export async function ensureSchema() {
           kind text NOT NULL CHECK (kind IN ('visit', 'product_view', 'order_click')),
           created_at timestamptz NOT NULL DEFAULT now()
         );
+        CREATE TABLE IF NOT EXISTS auth_rate_limits (
+          bucket_key text PRIMARY KEY,
+          attempts integer NOT NULL,
+          window_started_at timestamptz NOT NULL DEFAULT now()
+        );
+        CREATE TABLE IF NOT EXISTS email_verifications (
+          user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          token_hash text NOT NULL UNIQUE,
+          expires_at timestamptz NOT NULL
+        );
         ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS orders_enabled boolean NOT NULL DEFAULT false;
+        ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS signup_status text NOT NULL DEFAULT 'active';
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at timestamptz;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS featured boolean NOT NULL DEFAULT false;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS promo_price integer;
         CREATE INDEX IF NOT EXISTS products_restaurant_idx ON products(restaurant_id);
         CREATE INDEX IF NOT EXISTS payments_restaurant_idx ON payments(restaurant_id);
         CREATE INDEX IF NOT EXISTS menu_events_restaurant_date_idx ON menu_events(restaurant_id, created_at DESC);
-      `);
+        CREATE INDEX IF NOT EXISTS auth_rate_limits_started_idx ON auth_rate_limits(window_started_at);
+        `);
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
     })().catch((error) => { globalForDb.menuSchemaReady = undefined; throw error; });
   }
   await globalForDb.menuSchemaReady;

@@ -1,13 +1,15 @@
 import { z } from "zod";
 
 export const imageSchema = z.string().max(450_000).regex(/^data:image\/(png|jpeg|webp);base64,/).nullable().optional();
+export const passwordSchema = z.string().min(10, "Usá al menos 10 caracteres").max(72)
+  .refine((value) => new TextEncoder().encode(value).length <= 72, "La contraseña no puede superar 72 bytes");
 export const restaurantCreateSchema = z.object({
   name: z.string().trim().min(2).max(80),
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(60),
   type: z.enum(["Restaurante", "Cafetería", "Bar", "Otro"]),
   plan: z.enum(["basic", "premium"]),
   email: z.string().email().max(254),
-  password: z.string().min(10).max(128),
+  password: passwordSchema,
 });
 export const brandingSchema = z.object({
   name: z.string().trim().min(2).max(80),

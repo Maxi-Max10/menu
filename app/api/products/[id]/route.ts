@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { productSchema } from "@/lib/validation";
-import { apiError, unauthorized } from "@/lib/api";
+import { apiError, rejectCrossOrigin, unauthorized } from "@/lib/api";
 import type { Restaurant } from "@/lib/types";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) return rejected;
   const session = await requireSession("restaurant");
   if (!session?.restaurantId) return unauthorized();
   try {
@@ -21,7 +23,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
   } catch (error) { return apiError(error); }
 }
 
-export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) return rejected;
   const session = await requireSession("restaurant");
   if (!session?.restaurantId) return unauthorized();
   try {

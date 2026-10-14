@@ -3,7 +3,7 @@ import { z } from "zod";
 import { randomUUID } from "crypto";
 import { requireSession } from "@/lib/auth";
 import { query, transaction } from "@/lib/db";
-import { apiError, unauthorized } from "@/lib/api";
+import { apiError, rejectCrossOrigin, unauthorized } from "@/lib/api";
 import { PLANS, type Restaurant } from "@/lib/types";
 import { nextPeriodEnd } from "@/lib/billing";
 
@@ -11,15 +11,30 @@ const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("set-enabled"), enabled: z.boolean() }),
   z.object({ action: z.literal("set-plan"), plan: z.enum(["basic", "premium"]) }),
   z.object({ action: z.literal("record-payment"), note: z.string().max(200).optional() }),
+  z.object({ action: z.literal("activate-trial") }),
 ]);
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) return rejected;
   if (!(await requireSession("admin"))) return unauthorized();
   try {
     const { id } = await context.params;
     const data = patchSchema.parse(await request.json());
-    if (data.action === "set-enabled") {
-      const result = await query("UPDATE restaurants SET is_enabled = $1 WHERE id = $2", [data.enabled, id]);
+    if (data.action === "activate-trial") {
+      const outcome = await transaction(async (client) => {
+        const found = await client.query<Restaurant>("SELECT * FROM restaurants WHERE id = $1 FOR UPDATE", [id]);
+        const restaurant = found.rows[0];
+        if (!restaurant) return "missing";
+        if (restaurant.signup_status !== "pending" || restaurant.paid_until) return "already-active";
+        await client.query("UPDATE restaurants SET signup_status = 'active', is_enabled = true, paid_until = $1 WHERE id = $2", [nextPeriodEnd(null), id]);
+        await client.query("DELETE FROM email_verifications WHERE user_id IN (SELECT id FROM users WHERE restaurant_id = $1)", [id]);
+        return "ok";
+      });
+      if (outcome === "missing") return NextResponse.json({ error: "Local no encontrado" }, { status: 404 });
+      if (outcome === "already-active") return NextResponse.json({ error: "La prueba ya fue activada" }, { status: 409 });
+    } else if (data.action === "set-enabled") {
+      const result = await query("UPDATE restaurants SET is_enabled = $1 WHERE id = $2 AND signup_status = 'active'", [data.enabled, id]);
       if (!result.rowCount) return NextResponse.json({ error: "Local no encontrado" }, { status: 404 });
     } else if (data.action === "set-plan") {
       const outcome = await transaction(async (client) => {
@@ -40,12 +55,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
         const found = await client.query<Restaurant>("SELECT * FROM restaurants WHERE id = $1 FOR UPDATE", [id]);
         const restaurant = found.rows[0];
         if (!restaurant) return "missing";
+        if (restaurant.signup_status === "pending") return "pending";
         const nextEnd = nextPeriodEnd(restaurant.paid_until ? new Date(restaurant.paid_until) : null);
         await client.query("UPDATE restaurants SET paid_until = $1, is_enabled = true WHERE id = $2", [nextEnd, id]);
         await client.query("INSERT INTO payments (id, restaurant_id, amount, period_end, note) VALUES ($1, $2, $3, $4, $5)", [randomUUID(), id, PLANS[restaurant.plan].price, nextEnd, data.note || ""]);
         return "ok";
       });
       if (outcome === "missing") return NextResponse.json({ error: "Local no encontrado" }, { status: 404 });
+      if (outcome === "pending") return NextResponse.json({ error: "Activá la prueba antes de registrar una cuota" }, { status: 409 });
     }
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }

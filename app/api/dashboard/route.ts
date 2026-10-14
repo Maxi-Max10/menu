@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { brandingSchema } from "@/lib/validation";
-import { apiError, unauthorized } from "@/lib/api";
+import { apiError, rejectCrossOrigin, unauthorized } from "@/lib/api";
 import type { Product, Restaurant } from "@/lib/types";
 
 export async function GET() {
@@ -21,6 +21,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) return rejected;
   const session = await requireSession("restaurant");
   if (!session?.restaurantId) return unauthorized();
   try {

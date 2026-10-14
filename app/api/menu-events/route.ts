@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { query } from "@/lib/db";
-import { apiError } from "@/lib/api";
+import { apiError, rejectCrossOrigin } from "@/lib/api";
 
 const eventSchema = z.object({
   restaurantId: z.string().uuid(),
@@ -10,8 +10,8 @@ const eventSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: "Origen inválido" }, { status: 403 });
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) return rejected;
   try {
     const event = eventSchema.parse(await request.json());
     if ((event.kind === "product_view") !== !!event.productId) return NextResponse.json({ error: "Producto inválido" }, { status: 400 });

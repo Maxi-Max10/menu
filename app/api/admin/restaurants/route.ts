@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { requireSession } from "@/lib/auth";
 import { query, transaction } from "@/lib/db";
 import { restaurantCreateSchema } from "@/lib/validation";
-import { apiError, unauthorized } from "@/lib/api";
+import { apiError, rejectCrossOrigin, unauthorized } from "@/lib/api";
 import { addCalendarMonth } from "@/lib/billing";
 import type { Restaurant } from "@/lib/types";
 
@@ -20,6 +20,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const rejected = rejectCrossOrigin(request);
+  if (rejected) return rejected;
   if (!(await requireSession("admin"))) return unauthorized();
   try {
     const data = restaurantCreateSchema.parse(await request.json());

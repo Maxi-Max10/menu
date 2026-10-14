@@ -4,7 +4,8 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 
 ## Funciones
 
-- **Administrador:** crea locales y accesos, cambia planes, pausa cuentas y registra cuotas mensuales manualmente.
+- **Registro desde la landing:** cada local elige Esencial o Premium, crea su cuenta y aparece como pendiente en el panel administrador. El primer mes gratis empieza al verificar su correo o al ser activado por el administrador.
+- **Administrador:** ve las solicitudes, puede activar pruebas, crear locales, cambiar planes, pausar cuentas y registrar cuotas mensuales manualmente.
 - **Cada local:** edita nombre, descripción, logo, contacto y una de cinco paletas; carga productos con foto, precio, categoría y disponibilidad.
 - **Esencial:** primer mes gratis para locales nuevos; después $10.000 ARS al mes, hasta 100 productos.
 - **Premium:** primer mes gratis para locales nuevos; después $18.000 ARS al mes, hasta 200 productos, destacados, precios promocionales, carrito con pedido por WhatsApp y métricas de la carta.
@@ -16,23 +17,25 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 1. Creá una base PostgreSQL. Puede ser cualquier proveedor accesible desde Vercel.
 2. Copiá `.env.example` a `.env.local` y completá las variables. Generá `AUTH_SECRET` con al menos 32 caracteres aleatorios. El correo y la contraseña `ADMIN_*` son el acceso del administrador principal. Para desarrollo local, dejá `NEXT_PUBLIC_SITE_URL` vacío; los QR usarán el origen local.
 3. Ejecutá `npm install` y `npm run dev`. Abrí `http://localhost:3000`.
-4. Ingresá en `/ingresar` con la cuenta administradora. Al crear un local, su carta se publica durante un mes calendario sin registrar pago. Al terminar la prueba, registrá la primera cuota para mantenerla publicada.
+4. Ingresá en `/ingresar` con la cuenta administradora. También podés elegir un plan desde la landing y crear una cuenta nueva. Cuando el correo se confirma, la carta se publica durante un mes calendario sin registrar pago. Al terminar la prueba, registrá la primera cuota para mantenerla publicada.
 
-Las tablas se crean automáticamente cuando se hace la primera consulta a la base. Las contraseñas de los locales se guardan con bcrypt y el acceso se mantiene mediante una cookie firmada, HTTP only.
+Las tablas se crean automáticamente cuando se hace la primera consulta a la base. Las contraseñas de los locales se guardan con bcrypt y el acceso se mantiene mediante una cookie firmada, HTTP only. Los intentos de ingreso y registro tienen límites guardados en PostgreSQL.
 
 ## Vercel
 
 Importá este directorio como proyecto Next.js. Configurá `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` y `NEXT_PUBLIC_SITE_URL` como variables de entorno en Vercel. `NEXT_PUBLIC_SITE_URL` debe ser la dirección estable de producción (por ejemplo, `https://tu-sitio.vercel.app`); así los QR generados incluso desde una vista previa apuntan a la carta publicada. Desplegá con la configuración predeterminada de Next.js. La base PostgreSQL debe permitir conexiones desde Vercel; los archivos que se suben como logo o fotos se optimizan en el navegador y se guardan en la base de datos. No se usa el disco temporal de Vercel para datos persistentes.
+
+Para que el registro se active sin intervención, configurá además `SMTP_USER=contacto@polopositivoar.com` y `SMTP_PASSWORD` con la contraseña de **esa casilla** de Hostinger en las variables privadas de Vercel. Polo usa `smtp.hostinger.com` con TLS en el puerto 465. La contraseña no debe ir en el repositorio ni en el chat. Si faltan estas variables o falla el envío, la solicitud queda pendiente y podés usar «Activar prueba» en el panel. El enlace de verificación vence en 24 horas, se usa una sola vez y el mes gratis comienza al confirmarlo.
 
 Para recibir pedidos, el local Premium debe cargar su número con código de país en «Identidad del local» y activar «Habilitar pedidos por WhatsApp». Los clientes eligen cantidades en la carta y abren WhatsApp con el pedido y total estimado. El local confirma disponibilidad, importe final y entrega por ese canal. Polo no procesa pagos ni conoce si el mensaje finalmente se envió.
 
 ## Notas operativas
 
 - El registro de cuota suma un mes calendario al vencimiento vigente, o desde el momento del pago si ya venció. Se guarda un asiento en `payments` con el importe del plan en ese momento.
-- El mes gratis empieza cuando el administrador crea un local nuevo y se aplica una sola vez en ambos planes. No modifica vencimientos de locales existentes ni genera un asiento en `payments`. Si se registra un pago durante la prueba, el mes pagado empieza al terminarla.
+- El mes gratis empieza cuando se verifica el correo del dueño o el administrador activa un local nuevo, y se aplica una sola vez en ambos planes. No modifica vencimientos de locales existentes ni genera un asiento en `payments`. Si se registra un pago durante la prueba, el mes pagado empieza al terminarla.
 - El plan Esencial no admite más de 100 productos. Al bajar de Premium se desactivan los pedidos, destacados y precios promocionales.
 - El panel Premium muestra visitas a la carta, vistas de productos y clics para abrir el pedido durante los últimos 30 días. Son señales de interés, no ventas confirmadas; `/demo` no genera eventos.
-- Esta versión no cobra automáticamente ni envía correos. El administrador acredita pagos manualmente y entrega las credenciales al local por su propio canal.
+- Esta versión todavía no cobra automáticamente. El administrador acredita pagos manualmente. Con SMTP configurado, la app envía el enlace de verificación; sin SMTP, el administrador debe aprobar la solicitud.
 - `/demo` contiene una carta ilustrativa sin datos reales, con fotos, destacados, una promoción y un carrito de ejemplo. En la demo el pedido se copia al portapapeles, sin enviarse a ningún local. La foto de la torta es [Strawberry Chocolate Cake de Poly Haven](https://polyhaven.com/a/strawberry_chocolate_cake), bajo licencia CC0.
 
 ## Comandos

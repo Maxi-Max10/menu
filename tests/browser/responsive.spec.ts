@@ -190,3 +190,40 @@ test("new-account trial and updated prices are clear on mobile", async ({ page }
   await expect(page.getByText(/Después cuesta.*18.000/)).toBeVisible();
   await expectNoPageOverflow(page);
 });
+
+test("each plan opens signup and a new request stays pending", async ({ page, request }) => {
+  const crossSite = await request.post("/api/auth/register", {
+    headers: { Origin: "https://otro-sitio.example", "Content-Type": "application/json" },
+    data: { name: "Prueba", type: "Bar", plan: "premium", email: "test@example.com", password: "1234567890" },
+  });
+  expect(crossSite.status()).toBe(403);
+
+  await page.route("**/api/auth/register", async (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({ name: "Café Nuevo", type: "Cafetería", plan: "premium", email: "nuevo@example.com" });
+    await route.fulfill({ status: 202, json: { message: "Solicitud recibida" } });
+  });
+  await page.goto("/");
+  await expect(page.locator('.price-card').first().getByRole("link", { name: "Empezar gratis" })).toHaveAttribute("href", "/registrarse/esencial");
+  await page.locator('.price-card').last().getByRole("link", { name: "Empezar gratis" }).click();
+  await expect(page).toHaveURL(/\/registrarse\/premium$/);
+  await expectNoPageOverflow(page);
+  await page.getByLabel("Nombre del local").fill("Café Nuevo");
+  await page.getByLabel("Tipo de local").selectOption("Cafetería");
+  await page.getByLabel("Correo electrónico").fill("nuevo@example.com");
+  await page.getByLabel("Contraseña", { exact: true }).fill("claveSegura123");
+  await page.getByLabel("Repetir contraseña").fill("claveSegura123");
+  await page.getByRole("button", { name: "Empezar gratis" }).click();
+  await expect(page.getByRole("heading", { name: "Ya casi está." })).toBeVisible();
+
+  await page.route("**/api/auth/verify", route => route.fulfill({ json: { ok: true } }));
+  await page.goto(`/verificar?token=${"a".repeat(64)}`);
+  await page.getByRole("button", { name: "Confirmar y activar" }).click();
+  await expect(page.getByRole("heading", { name: "¡Tu cuenta está lista!" })).toBeVisible();
+
+  const pending = { ...restaurant, signup_status: "pending", is_enabled: false, paid_until: null, owner_email: "nuevo@example.com" };
+  await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [pending] } }));
+  await page.route("**/api/admin/restaurants/*", route => route.fulfill({ json: { ok: true } }));
+  await page.goto("/admin");
+  await expect(page.getByText("Pendiente")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Activar prueba" })).toBeVisible();
+});
