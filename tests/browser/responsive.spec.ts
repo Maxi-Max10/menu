@@ -161,7 +161,7 @@ test("plan examples show ordering only in Premium", async ({ page }) => {
   await expect(essentialSalad.locator(".menu-price strong")).toHaveText(/12.000/);
 
   await page.goto("/");
-  await page.locator(".price-card").last().getByRole("link", { name: "Probar carta Premium" }).click();
+  await page.locator(".price-card").filter({ has: page.getByRole("heading", { name: "Premium", exact: true }) }).getByRole("link", { name: "Probar carta Premium" }).click();
   await expect(page).toHaveURL(/\/demo$/);
   await expect(page.locator(".demo-ribbon")).toContainText("PLAN PREMIUM");
   await expect(page.getByRole("heading", { name: "Mesa Luma" })).toBeVisible();
@@ -300,7 +300,15 @@ test("new-account trial and updated prices are clear on mobile", async ({ page }
   await page.goto("/");
   await expect(page.locator(".trial-badge")).toHaveCount(2);
   await expect(page.locator(".price-card").first()).toContainText("10.000");
-  await expect(page.locator(".price-card").last()).toContainText("18.000");
+  await expect(page.locator(".price-card").filter({ has: page.getByRole("heading", { name: "Premium", exact: true }) })).toContainText("18.000");
+  await expect(page.locator(".price-card")).toHaveCount(3);
+  const gold = page.locator(".price-card").filter({ has: page.getByRole("heading", { name: "Gold", exact: true }) });
+  await expect(gold).toContainText("A medida");
+  await expect(gold.locator(".trial-badge")).toHaveCount(0);
+  const contactUrl = new URL((await gold.getByRole("link", { name: "Solicitar presupuesto" }).getAttribute("href"))!);
+  expect(contactUrl.origin + contactUrl.pathname).toBe("https://wa.me/5492617586685");
+  expect(contactUrl.searchParams.get("text")).toContain("plan Gold");
+  await expectNoPageOverflow(page);
 
   const trialRestaurant = { ...restaurant, is_trial: true };
   await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [trialRestaurant] } }));
@@ -357,7 +365,7 @@ test("each plan opens signup and a new request stays pending", async ({ page, re
   });
   await page.goto("/");
   await expect(page.locator('.price-card').first().getByRole("link", { name: "Empezar gratis" })).toHaveAttribute("href", "/registrarse/esencial");
-  await page.locator('.price-card').last().getByRole("link", { name: "Empezar gratis" }).click();
+  await page.locator('.price-card').filter({ has: page.getByRole("heading", { name: "Premium", exact: true }) }).getByRole("link", { name: "Empezar gratis" }).click();
   await expect(page).toHaveURL(/\/registrarse\/premium$/);
   await expect(page.getByLabel("Plan", { exact: true })).toHaveValue("premium");
   await expectNoPageOverflow(page);

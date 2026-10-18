@@ -1,9 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, Check, ChevronRight, Coffee, QrCode, ShoppingBag, Sparkles, Smartphone, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Coffee, Crown, QrCode, ShoppingBag, Sparkles, Smartphone, UtensilsCrossed } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { BrandMark } from "@/components/BrandMark";
 import { SupportLinks } from "@/components/SupportLinks";
 import { formatMoney, PLANS } from "@/lib/types";
+import { SUPPORT_WHATSAPP_HREF } from "@/lib/support";
+import styles from "./page.module.css";
+
+const goldContactUrl = `${SUPPORT_WHATSAPP_HREF}?text=${encodeURIComponent("Hola, me interesa el plan Gold de Polo. Quisiera un presupuesto para una página personalizada de mi local con dominio propio, menú digital, WhatsApp y redes sociales.")}`;
 
 export default function Home() {
   return <main className="landing">
@@ -39,7 +43,66 @@ export default function Home() {
 
     <section className="feature-section"><div className="wrap feature-grid"><div className="feature-art"><div className="feature-circle"><div className="feature-card card-back">TU MENÚ <span><BrandMark /></span></div><div className="feature-card card-front"><span className="feature-card-kicker">DEL ANTOJO AL PEDIDO</span><div className="feature-plate"><ShoppingBag size={68} strokeWidth={1.2} /></div><strong>Elegí.<br />Pedí.</strong><small>Disponible en Premium</small></div></div></div><div className="feature-copy"><span className="overline">PLAN PREMIUM</span><h2>Una carta que también recibe pedidos.</h2><p>Tus clientes arman su pedido desde el celular y te lo envían al panel de tu local. Destacá platos, creá promociones y mirá qué productos despiertan más interés.</p><a href="#planes" className="text-link">Explorar Premium <ArrowRight size={18} /></a></div></div></section>
 
-    <section className="section pricing wrap" id="planes"><div className="pricing-head"><div><span className="overline">PRECIOS CLAROS</span><h2>Un plan para<br /><em>cada mesa.</em></h2></div><p>El primer mes es gratis en ambos planes para locales nuevos. Después, pagás la cuota mensual en pesos argentinos.</p></div><div className="pricing-grid"><article className="price-card"><div className="price-top"><span className="plan-mark"><UtensilsCrossed size={19} /></span><span>PARA EMPEZAR</span></div><h3>Esencial</h3><p>Una carta digital linda, clara y siempre al día.</p><div className="price">{formatMoney(PLANS.basic.price)} <span>/ mes desde el segundo mes</span></div><span className="trial-badge">Primer mes gratis</span><ul><li><Check size={17} /> Hasta 100 productos</li><li><Check size={17} /> Fotos, precios y categorías</li><li><Check size={17} /> Logo y colores predefinidos</li><li><Check size={17} /> QR descargable y enlace público</li></ul><Link href="/registrarse/esencial" className="button button-dark">Empezar gratis <ArrowRight size={17} /></Link><Link href="/demo/esencial" className="pricing-demo-link">Ver carta Esencial</Link></article><article className="price-card price-featured"><div className="price-top"><span className="plan-mark"><Sparkles size={19} /></span><span>PARA VENDER MÁS</span></div><h3>Premium</h3><p>Recibí pedidos y conocé mejor a tus clientes.</p><div className="price">{formatMoney(PLANS.premium.price)} <span>/ mes desde el segundo mes</span></div><span className="trial-badge">Primer mes gratis</span><ul><li><Check size={17} /> Hasta 200 productos</li><li><Check size={17} /> Todo lo del plan Esencial</li><li><Check size={17} /> Carrito y pedidos en tu panel</li><li><Check size={17} /> Productos destacados y promociones</li><li><Check size={17} /> Visitas, platos vistos y clics para pedir</li></ul><Link href="/registrarse/premium" className="button button-cream">Empezar gratis <ArrowRight size={17} /></Link><Link href="/demo" className="pricing-demo-link">Probar carta Premium</Link></article></div><p className="pricing-footnote">Creá tu cuenta desde el plan que elijas. El mes gratis comienza al activar tu cuenta; las cuotas posteriores se acreditan manualmente.</p></section>
+    <section className="section pricing wrap" id="planes">
+      <div className="pricing-head">
+        <div><span className="overline">UN PLAN PARA CADA LOCAL</span><h2>Un plan para<br /><em>cada mesa.</em></h2></div>
+        <p>Empezá con un mes gratis en Esencial o Premium. Con Gold, diseñamos una página a medida para que tu local tenga su propio espacio online.</p>
+      </div>
+      <div className={`pricing-grid ${styles.plans}`}>
+        <article className={`price-card ${styles.planCard}`}>
+          <div className="price-top"><span className="plan-mark"><UtensilsCrossed size={19} /></span><span>PARA EMPEZAR</span></div>
+          <h3>Esencial</h3>
+          <p>Una carta digital linda, clara y siempre al día.</p>
+          <div className="price">{formatMoney(PLANS.basic.price)} <span>/ mes desde el segundo mes</span></div>
+          <span className="trial-badge">Primer mes gratis</span>
+          <ul>
+            <li><Check size={17} /> Hasta 100 productos</li>
+            <li><Check size={17} /> Fotos, precios y categorías</li>
+            <li><Check size={17} /> Logo y colores predefinidos</li>
+            <li><Check size={17} /> QR descargable y enlace público</li>
+          </ul>
+          <Link href="/registrarse/esencial" className="button button-dark">Empezar gratis <ArrowRight size={17} /></Link>
+          <Link href="/demo/esencial" className="pricing-demo-link">Ver carta Esencial</Link>
+        </article>
+        <article className={`price-card price-featured ${styles.planCard}`}>
+          <div className="price-top"><span className="plan-mark"><Sparkles size={19} /></span><span>PARA VENDER MÁS</span></div>
+          <h3>Premium</h3>
+          <p>Recibí pedidos y conocé mejor a tus clientes.</p>
+          <div className="price">{formatMoney(PLANS.premium.price)} <span>/ mes desde el segundo mes</span></div>
+          <span className="trial-badge">Primer mes gratis</span>
+          <ul>
+            <li><Check size={17} /> Hasta 200 productos</li>
+            <li><Check size={17} /> Todo lo del plan Esencial</li>
+            <li><Check size={17} /> Carrito y pedidos en tu panel</li>
+            <li><Check size={17} /> Productos destacados y promociones</li>
+            <li><Check size={17} /> Visitas, platos vistos y clics para pedir</li>
+          </ul>
+          <Link href="/registrarse/premium" className="button button-cream">Empezar gratis <ArrowRight size={17} /></Link>
+          <Link href="/demo" className="pricing-demo-link">Probar carta Premium</Link>
+        </article>
+        <article className={`price-card ${styles.planCard} ${styles.goldCard}`}>
+          <div className="price-top"><span className="plan-mark"><Crown size={19} /></span><span>TODA TU IDENTIDAD</span></div>
+          <h3>Gold</h3>
+          <p>Una página de tu local, totalmente personalizada.</p>
+          <div className="price">A medida <span>/ presupuesto personalizado</span></div>
+          <span className={styles.customBadge}>Diseñada para tu marca</span>
+          <ul>
+            <li><Check size={17} /> Todo Premium: menú, pedidos y métricas</li>
+            <li><Check size={17} /> Página del local con diseño exclusivo</li>
+            <li><Check size={17} /> Dominio propio para la página de tu local</li>
+            <li><Check size={17} /> Menú conectado con WhatsApp</li>
+            <li><Check size={17} /> Enlaces a todas tus redes sociales</li>
+            <li><Check size={17} /> Galería de fotos e historia del local</li>
+            <li><Check size={17} /> Horarios, ubicación y Google Maps</li>
+            <li><Check size={17} /> Consultas y reservas por WhatsApp</li>
+            <li><Check size={17} /> Diseño adaptado a celulares</li>
+          </ul>
+          <a href={goldContactUrl} target="_blank" rel="noopener noreferrer" className="button button-dark">Solicitar presupuesto <ArrowRight size={17} /></a>
+          <p className={styles.customNote}>Coordinamos el diseño, el alcance y la puesta en marcha con vos.</p>
+        </article>
+      </div>
+      <p className="pricing-footnote">Esencial y Premium: primer mes gratis al activar tu cuenta; luego, cuota mensual en pesos argentinos. Gold: precio y condiciones según el proyecto.</p>
+    </section>
 
     <footer className="footer"><div className="wrap footer-inner"><div><Brand light /><p>Buenas cartas. Mejores encuentros.</p></div><div><Link href="/demo">Carta de ejemplo</Link><Link href="/ingresar">Ingresar</Link><a href="#planes">Planes</a></div><div className="footer-support"><strong>Soporte Polo</strong><SupportLinks /></div><span>© {new Date().getFullYear()} polo.</span></div></footer>
   </main>;

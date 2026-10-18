@@ -9,6 +9,7 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 - **Cada local:** edita nombre, descripción, logo, contacto y una de cinco paletas; carga productos con foto, precio, categoría y disponibilidad.
 - **Esencial:** primer mes gratis para locales nuevos; después $10.000 ARS al mes, hasta 100 productos.
 - **Premium:** primer mes gratis para locales nuevos; después $18.000 ARS al mes, hasta 200 productos, destacados, precios promocionales, carrito con pedido por WhatsApp y métricas de la carta.
+- **Gold a medida:** tercera propuesta comercial en la landing, con todo Premium más una página personalizada del local con dominio propio, enlaces a redes, galería, horarios, mapa y consultas o reservas por WhatsApp. Se solicita presupuesto al contacto de Polo; precio, condiciones y desarrollo de la página se acuerdan por proyecto. No tiene alta automática ni una cuota predefinida en el panel.
 - **Carta pública:** `/menu/slug-del-local`. Si venció la prueba o la cuota, o el administrador pausó la cuenta, la carta deja de mostrar los productos.
 - **QR en ambos planes:** cada local puede descargar el código de su carta en PNG o SVG y copiar su enlace desde la pestaña «QR y enlace». El QR conserva su dirección cuando se editan los productos.
 

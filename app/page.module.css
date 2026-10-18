@@ -1,0 +1,95 @@
+.plans:global(.pricing-grid) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.planCard {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 28px;
+}
+
+.planCard > p {
+  line-height: 1.6;
+}
+
+.planCard :global(.price) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.planCard > ul {
+  flex: 1;
+  align-content: start;
+  margin-top: 20px;
+}
+
+.planCard li {
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+.planCard li svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.planCard :global(.trial-badge) {
+  align-self: flex-start;
+}
+
+.goldCard {
+  background: linear-gradient(145deg, #fffaf0, #f3e4c8);
+  border-color: #d7b77c;
+}
+
+.goldCard :global(.price-top) {
+  color: #78582b;
+}
+
+.goldCard :global(.plan-mark) {
+  color: #78582b;
+  background: #ead7b1;
+}
+
+.goldCard > p,
+.goldCard :global(.price) span {
+  color: #72654f;
+}
+
+.customBadge {
+  align-self: flex-start;
+  padding: 7px 12px;
+  border: 1px solid #d7b77c;
+  border-radius: 20px;
+  color: #78582b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.goldCard > .customNote {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 12px;
+}
+
+@media (max-width: 1000px) {
+  .plans:global(.pricing-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .goldCard {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .plans:global(.pricing-grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planCard {
+    padding: 25px;
+  }
+}
