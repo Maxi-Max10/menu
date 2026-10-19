@@ -62,9 +62,7 @@ export async function GET() {
         COALESCE((SELECT json_agg(json_build_object('product_id', oi.product_id, 'product_name', oi.product_name,
           'unit_price', oi.unit_price, 'quantity', oi.quantity, 'line_total', oi.line_total::text) ORDER BY oi.id)
           FROM order_items oi WHERE oi.order_id = o.id), '[]'::json) AS items
-      FROM orders o WHERE o.restaurant_id = $1
-        AND o.created_at >= (date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') AT TIME ZONE 'America/Argentina/Buenos_Aires')
-        AND o.created_at < ((date_trunc('day', now() AT TIME ZONE 'America/Argentina/Buenos_Aires') + interval '1 day') AT TIME ZONE 'America/Argentina/Buenos_Aires')
+      FROM orders o WHERE o.restaurant_id = $1 AND o.status <> 'completed'
       ORDER BY o.created_at DESC
     `, [session.restaurantId]);
     return NextResponse.json({ orders: rows.map((order) => ({ ...order, total: Number(order.total), items: order.items.map((item) => ({ ...item, line_total: Number(item.line_total) })) })) }, { headers: { "Cache-Control": "private, no-store" } });

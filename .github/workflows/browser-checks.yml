@@ -19,7 +19,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run test:qr
       - run: npm run test:billing
+      - run: npm run test:orders
       - run: npm run test:passwords
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:browsers

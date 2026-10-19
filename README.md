@@ -8,7 +8,7 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 - **Administrador:** ve las solicitudes, puede activar pruebas, crear locales, cambiar planes, pausar cuentas, registrar cuotas mensuales manualmente y restablecer contraseñas desde el botón con la llave junto a cada local. La contraseña nueva debe tener al menos 10 caracteres y se confirma antes de guardarla; las sesiones anteriores de esa cuenta quedan invalidadas.
 - **Cada local:** edita nombre, descripción, logo, contacto y una de cinco paletas; carga productos con foto, precio, categoría y disponibilidad.
 - **Esencial:** primer mes gratis para locales nuevos; después $10.000 ARS al mes, hasta 100 productos.
-- **Premium:** primer mes gratis para locales nuevos; después $18.000 ARS al mes, hasta 200 productos, destacados, precios promocionales, carrito con pedido por WhatsApp y métricas de la carta.
+- **Premium:** primer mes gratis para locales nuevos; después $18.000 ARS al mes, hasta 200 productos, destacados, precios promocionales, carrito con pedidos recibidos en el panel del local y métricas de la carta.
 - **Gold a medida:** tercera propuesta comercial en la landing, con todo Premium más una página personalizada del local con dominio propio, enlaces a redes, galería, horarios, mapa y consultas o reservas por WhatsApp. Se solicita presupuesto al contacto de Polo; precio, condiciones y desarrollo de la página se acuerdan por proyecto. No tiene alta automática ni una cuota predefinida en el panel.
 - **Carta pública:** `/menu/slug-del-local`. Si venció la prueba o la cuota, o el administrador pausó la cuenta, la carta deja de mostrar los productos.
 - **QR en ambos planes:** cada local puede descargar el código de su carta en PNG o SVG y copiar su enlace desde la pestaña «QR y enlace». El QR conserva su dirección cuando se editan los productos.
@@ -32,16 +32,16 @@ Importá este directorio como proyecto Next.js. Configurá `DATABASE_URL`, `AUTH
 
 Para que el registro se active sin intervención, configurá además `SMTP_USER=contacto@polopositivoar.com` y `SMTP_PASSWORD` con la contraseña de **esa casilla** de Hostinger en las variables privadas de Vercel. Polo usa `smtp.hostinger.com` con TLS en el puerto 465. La contraseña no debe ir en el repositorio ni en el chat. Si faltan estas variables o falla el envío, la solicitud queda pendiente y podés usar «Activar prueba» en el panel tras comprobar por tu cuenta quién pidió el acceso. El enlace de verificación vence en 24 horas, se usa una sola vez y exige la contraseña creada al registrarse; el mes gratis comienza al confirmarlo.
 
-Para recibir pedidos, el local Premium debe cargar su número con código de país en «Identidad del local» y activar «Habilitar pedidos por WhatsApp». Los clientes eligen cantidades en la carta y abren WhatsApp con el pedido y total estimado. El local confirma disponibilidad, importe final y entrega por ese canal. Polo no procesa pagos ni conoce si el mensaje finalmente se envió.
+Para recibir pedidos, el local Premium debe activar «Habilitar pedidos desde la carta» en «Identidad del local». Los clientes eligen cantidades, ingresan sus datos y confirman el pedido en Polo. El local lo ve en su panel y confirma disponibilidad e importe final con el cliente; Polo no procesa pagos. Los pedidos permanecen visibles, incluso después de medianoche, hasta que el local los marca como «Entregado». El número de WhatsApp es opcional y se muestra como enlace de contacto en la carta.
 
 ## Notas operativas
 
 - El registro de cuota suma un mes calendario al vencimiento vigente, o desde el momento del pago si ya venció. Se guarda un asiento en `payments` con el importe del plan en ese momento.
 - El mes gratis empieza cuando se verifica el correo del dueño o el administrador activa un local nuevo, y se aplica una sola vez en ambos planes. No modifica vencimientos de locales existentes ni genera un asiento en `payments`. Si se registra un pago durante la prueba, el mes pagado empieza al terminarla.
 - El plan Esencial no admite más de 100 productos. Al bajar de Premium se desactivan los pedidos, destacados y precios promocionales.
-- El panel Premium muestra visitas a la carta, vistas de productos y clics para abrir el pedido durante los últimos 30 días. Son señales de interés, no ventas confirmadas; `/demo` no genera eventos.
+- El panel Premium muestra visitas a la carta, vistas de productos y pedidos recibidos durante los últimos 30 días. Las visitas y vistas son señales de interés, no ventas confirmadas; `/demo` no genera eventos.
 - Esta versión todavía no cobra automáticamente. El administrador acredita pagos manualmente. Con SMTP configurado, la app envía el enlace de verificación; sin SMTP, el administrador debe aprobar la solicitud.
-- `/demo` contiene una carta ilustrativa sin datos reales, con fotos, destacados, una promoción y un carrito de ejemplo. En la demo el pedido se copia al portapapeles, sin enviarse a ningún local. La foto de la torta es [Strawberry Chocolate Cake de Poly Haven](https://polyhaven.com/a/strawberry_chocolate_cake), bajo licencia CC0.
+- `/demo` contiene una carta ilustrativa sin datos reales, con fotos, destacados, una promoción y un carrito de ejemplo. En la demo el pedido se simula sin enviarse a ningún local. La foto de la torta es [Strawberry Chocolate Cake de Poly Haven](https://polyhaven.com/a/strawberry_chocolate_cake), bajo licencia CC0.
 
 ## Comandos
 

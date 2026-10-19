@@ -392,7 +392,7 @@ test("owner can save a custom two-color palette", async ({ page }) => {
   await expectNoPageOverflow(page);
 });
 
-test("Premium owner sees today's orders and can update their status", async ({ page }) => {
+test("Premium owner keeps older orders until marking them delivered", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   const orderId = "22222222-2222-4222-8222-222222222222";
   await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [] } }));
@@ -402,18 +402,23 @@ test("Premium owner sees today's orders and can update their status", async ({ p
     items: [{ product_id: null, product_name: "Ensalada", unit_price: 9900, quantity: 2, line_total: 19800 }, { product_id: null, product_name: "Limonada", unit_price: 3000, quantity: 1, line_total: 3000 }],
   }] } }));
   await page.route("**/api/orders/*", async (route) => {
-    expect(route.request().postDataJSON()).toEqual({ status: "preparing" });
+    expect(["preparing", "completed"]).toContain(route.request().postDataJSON().status);
     await route.fulfill({ json: { ok: true } });
   });
   await signInForBrowserTest(page, "restaurant");
   await page.goto("/panel");
   await page.getByRole("button", { name: "Pedidos" }).click();
-  await expect(page.getByRole("heading", { name: "Pedidos de hoy" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pedidos sin entregar" })).toBeVisible();
   await expect(page.locator(".order-card")).toContainText("Ana Pérez");
+  await expect(page.locator(".order-card")).toContainText("14/10/2026");
   await expect(page.locator(".order-card")).toContainText("22.800");
   await expect(page.locator(".order-card")).toContainText("Sin cebolla");
   await page.getByLabel(`Estado del pedido ${orderId.slice(0, 8)}`).selectOption("preparing");
   await expect(page.getByLabel(`Estado del pedido ${orderId.slice(0, 8)}`)).toHaveValue("preparing");
+  await page.getByLabel(`Estado del pedido ${orderId.slice(0, 8)}`).selectOption("completed");
+  await expect(page.locator(".order-card")).toHaveCount(0);
+  await page.getByRole("button", { name: "Actualizar" }).click();
+  await expect(page.locator(".order-card")).toHaveCount(0);
   await expectNoPageOverflow(page);
 });
 
