@@ -22,7 +22,9 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 
 Las tablas se crean automáticamente cuando se hace la primera consulta a la base. Las contraseñas de los locales se guardan con bcrypt y el acceso se mantiene mediante una cookie firmada, HTTP only. Los intentos de ingreso y registro tienen límites guardados en PostgreSQL.
 
-Para recuperar una cuenta de local, ingresá como administrador en `/admin`, buscá el local y elegí «Restablecer contraseña». Definí una contraseña nueva y repetila para guardarla. El local podrá ingresar con su correo habitual y esa contraseña. Esta función requiere una sesión administradora; la recuperación automática por correo todavía no está disponible. Al actualizar a esta versión, los locales que ya tenían una sesión abierta deberán ingresar una vez más.
+Para recuperar una cuenta de local, elegí «Olvidé mi contraseña» en `/ingresar` o abrí `/recuperar`. Ingresá el correo del local para recibir un enlace firmado, válido por 30 minutos. El enlace está vinculado a la contraseña vigente y deja de servir al usarlo o cuando el administrador cambia la contraseña; dos intentos simultáneos no pueden reutilizarlo. Se usa el mismo correo SMTP que para la activación. Si el envío no está disponible, la pantalla indica cómo contactar a Polo y la respuesta no revela si el correo está registrado.
+
+También podés ingresar como administrador en `/admin`, buscar el local y elegir «Restablecer contraseña». Definí una contraseña nueva y repetila para guardarla. El local podrá ingresar con su correo habitual y esa contraseña. En ambos métodos se invalidan las sesiones anteriores de esa cuenta. Las credenciales del administrador principal siguen gestionándose mediante `ADMIN_EMAIL` y `ADMIN_PASSWORD` en Vercel; la recuperación por correo es para cuentas de locales.
 
 ## Vercel
 

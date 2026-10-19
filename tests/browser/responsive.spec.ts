@@ -116,6 +116,74 @@ test("password reset endpoint rejects unauthenticated, non-admin and invalid req
   expect((await page.request.post(path, { headers, data: { password: "🔒".repeat(20) } })).status()).toBe(400);
 });
 
+test("forgot password is reachable from login and requests a recovery email", async ({ page }, testInfo) => {
+  let attempts = 0;
+  await page.route("**/api/auth/password/forgot", async route => {
+    expect(route.request().postDataJSON()).toEqual({ email: "owner@example.test" });
+    attempts++;
+    if (attempts === 1) await route.fulfill({ status: 500, json: { error: "No se pudo completar la solicitud. Probá otra vez." } });
+    else await route.fulfill({ status: 202, json: { message: "Si el correo pertenece a una cuenta de local, recibirás un enlace. Revisá también spam." } });
+  });
+  await page.goto("/ingresar");
+  await page.getByRole("link", { name: "Olvidé mi contraseña" }).click();
+  await expect(page).toHaveURL(/\/recuperar$/);
+  for (const width of [320, 375, 1440]) {
+    await page.setViewportSize({ width, height: 812 });
+    await expectNoPageOverflow(page);
+  }
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.screenshot({ path: testInfo.outputPath("forgot-password.png") });
+  await page.getByLabel("Correo electrónico").fill("owner@example.test");
+  await page.getByRole("button", { name: "Enviar enlace de recuperación" }).click();
+  await expect(page.locator("form").getByRole("alert")).toContainText("Probá otra vez");
+  await page.getByRole("button", { name: "Enviar enlace de recuperación" }).click();
+  await expect(page.getByRole("heading", { name: "Revisá tu correo." })).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("30 minutos");
+  await expect(page.getByRole("link", { name: "Ir a ingresar" })).toHaveAttribute("href", "/ingresar");
+  expect(attempts).toBe(2);
+});
+
+test("recovery link handles expired links and saves a matching new password", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  let submissions = 0;
+  await page.route("**/api/auth/password/reset", async route => {
+    submissions++;
+    const data = route.request().postDataJSON();
+    expect(data.password).toBe("Fixture password 123");
+    if (data.token === "expired-fixture") await route.fulfill({ status: 400, json: { error: "El enlace venció, ya se usó o no es válido. Solicitá uno nuevo." } });
+    else {
+      expect(data.token).toBe("valid-fixture");
+      await route.fulfill({ json: { ok: true } });
+    }
+  });
+  await page.goto("/recuperar?token=expired-fixture");
+  const password = page.getByLabel("Nueva contraseña", { exact: true });
+  const confirmation = page.getByLabel("Repetir nueva contraseña");
+  await password.fill("Fixture password 123");
+  await confirmation.fill("Wrong fixture password");
+  await page.getByRole("button", { name: "Guardar nueva contraseña" }).click();
+  await expect(page.locator("form").getByRole("alert")).toHaveText("Las contraseñas no coinciden");
+  expect(submissions).toBe(0);
+  await confirmation.fill("Fixture password 123");
+  await page.getByRole("button", { name: "Guardar nueva contraseña" }).click();
+  await expect(page.locator("form").getByRole("alert")).toContainText("El enlace venció");
+  await page.getByRole("link", { name: "Solicitar otro enlace" }).click();
+  await expect(page.getByLabel("Correo electrónico")).toBeVisible();
+  await expect(page.locator("form").getByRole("alert")).toHaveCount(0);
+  await page.goto("/recuperar?token=valid-fixture");
+  await expectNoPageOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath("new-password.png") });
+  await password.fill("Fixture password 123");
+  await confirmation.fill("Fixture password 123");
+  await page.getByLabel("Mostrar contraseña").check();
+  await expect(password).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "Guardar nueva contraseña" }).click();
+  await expect(page.getByRole("heading", { name: "Contraseña actualizada." })).toBeVisible();
+  await expect(page.getByRole("status")).not.toContainText("Fixture password");
+  await page.getByRole("link", { name: "Ir a ingresar" }).click();
+  await expect(page).toHaveURL(/\/ingresar$/);
+});
+
 async function expectNoPageOverflow(page: Page) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }

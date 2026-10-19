@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createHmac } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { query } from "@/lib/db";
 
@@ -16,6 +16,22 @@ function secret() {
 // Only this keyed digest is included in the cookie, never the bcrypt hash.
 export function credentialTag(passwordHash: string) {
   return createHmac("sha256", secret()).update(passwordHash).digest("hex");
+}
+
+export async function createPasswordResetToken(user: { id: string; password_hash: string }) {
+  return new SignJWT({ purpose: "password-reset", credentialTag: credentialTag(user.password_hash) })
+    .setProtectedHeader({ alg: "HS256" }).setSubject(user.id).setIssuer("polo").setAudience("password-reset")
+    .setJti(randomUUID()).setIssuedAt().setExpirationTime("30m").sign(secret());
+}
+
+export async function readPasswordResetToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"], issuer: "polo", audience: "password-reset" });
+    if (payload.purpose === "password-reset" && typeof payload.sub === "string" && typeof payload.credentialTag === "string") {
+      return { userId: payload.sub, credentialTag: payload.credentialTag };
+    }
+  } catch { /* Expired, malformed or incorrectly signed recovery link. */ }
+  return null;
 }
 
 export async function createSession(session: Session) {
