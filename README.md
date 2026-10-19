@@ -5,7 +5,7 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 ## Funciones
 
 - **Registro desde la landing:** cada local elige Esencial o Premium, crea su cuenta y aparece como pendiente en el panel administrador. El primer mes gratis empieza al verificar su correo o al ser activado por el administrador.
-- **Administrador:** ve las solicitudes, puede activar pruebas, crear locales, cambiar planes, pausar cuentas y registrar cuotas mensuales manualmente.
+- **Administrador:** ve las solicitudes, puede activar pruebas, crear locales, cambiar planes, pausar cuentas, registrar cuotas mensuales manualmente y restablecer contraseñas desde el botón con la llave junto a cada local. La contraseña nueva debe tener al menos 10 caracteres y se confirma antes de guardarla; las sesiones anteriores de esa cuenta quedan invalidadas.
 - **Cada local:** edita nombre, descripción, logo, contacto y una de cinco paletas; carga productos con foto, precio, categoría y disponibilidad.
 - **Esencial:** primer mes gratis para locales nuevos; después $10.000 ARS al mes, hasta 100 productos.
 - **Premium:** primer mes gratis para locales nuevos; después $18.000 ARS al mes, hasta 200 productos, destacados, precios promocionales, carrito con pedido por WhatsApp y métricas de la carta.
@@ -21,6 +21,8 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 4. Ingresá en `/ingresar` con la cuenta administradora. También podés elegir un plan desde la landing y crear una cuenta nueva. Cuando el correo se confirma, la carta se publica durante un mes calendario sin registrar pago. Al terminar la prueba, registrá la primera cuota para mantenerla publicada.
 
 Las tablas se crean automáticamente cuando se hace la primera consulta a la base. Las contraseñas de los locales se guardan con bcrypt y el acceso se mantiene mediante una cookie firmada, HTTP only. Los intentos de ingreso y registro tienen límites guardados en PostgreSQL.
+
+Para recuperar una cuenta de local, ingresá como administrador en `/admin`, buscá el local y elegí «Restablecer contraseña». Definí una contraseña nueva y repetila para guardarla. El local podrá ingresar con su correo habitual y esa contraseña. Esta función requiere una sesión administradora; la recuperación automática por correo todavía no está disponible. Al actualizar a esta versión, los locales que ya tenían una sesión abierta deberán ingresar una vez más.
 
 ## Vercel
 

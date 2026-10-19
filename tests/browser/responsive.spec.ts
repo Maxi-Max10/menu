@@ -54,6 +54,68 @@ test("admin sees the owner's signup phone", async ({ page }) => {
   await expect(page.getByText("Tel.: +54 9 11 1234-5678")).toBeVisible();
 });
 
+test("admin resets the selected local password and can retry errors on mobile", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await signInForBrowserTest(page, "admin");
+  const id = "11111111-1111-4111-8111-111111111111";
+  const local = { ...restaurant, id, name: "Jagger", owner_email: "owner@example.test", product_count: 0 };
+  await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [local] } }));
+  let submissions = 0;
+  await page.route(`**/api/admin/restaurants/${id}/password`, async route => {
+    expect(route.request().method()).toBe("POST");
+    expect(route.request().postDataJSON()).toEqual({ password: "Fixture password 123" });
+    submissions++;
+    if (submissions === 1) await route.fulfill({ status: 500, json: { error: "No se pudo guardar. Probá otra vez." } });
+    else await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Restablecer contraseña de Jagger" }).click();
+  const dialog = page.getByRole("dialog", { name: "Restablecer contraseña" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("owner@example.test");
+  const password = dialog.getByLabel("Nueva contraseña", { exact: true });
+  const confirmation = dialog.getByLabel("Repetir nueva contraseña");
+  await expect(password).toBeFocused();
+  await expectNoPageOverflow(page);
+  await page.screenshot({ path: testInfo.outputPath("password-reset.png") });
+  await password.fill("Fixture password 123");
+  await confirmation.fill("Different password 456");
+  await dialog.getByRole("button", { name: "Guardar contraseña" }).click();
+  await expect(dialog.getByRole("alert")).toHaveText("Las contraseñas no coinciden");
+  expect(submissions).toBe(0);
+  await dialog.getByLabel("Mostrar contraseña").check();
+  await expect(password).toHaveAttribute("type", "text");
+  await confirmation.fill("Fixture password 123");
+  await dialog.getByRole("button", { name: "Guardar contraseña" }).click();
+  await expect(dialog.getByRole("alert")).toHaveText("No se pudo guardar. Probá otra vez.");
+  await expect(dialog.getByRole("button", { name: "Guardar contraseña" })).toBeEnabled();
+  await dialog.getByRole("button", { name: "Guardar contraseña" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText("Contraseña de Jagger actualizada");
+  await expect(page.getByRole("status")).not.toContainText("Fixture password");
+  expect(submissions).toBe(2);
+  await page.getByRole("button", { name: "Restablecer contraseña de Jagger" }).click();
+  await expect(password).toHaveValue("");
+  await expect(confirmation).toHaveValue("");
+  await expect(password).toHaveAttribute("type", "password");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
+
+test("password reset endpoint rejects unauthenticated, non-admin and invalid requests", async ({ page, request }) => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  const path = `/api/admin/restaurants/${id}/password`;
+  const headers = { Origin: "http://localhost:3001" };
+  const data = { password: "Fixture password 123" };
+  expect((await request.post(path, { headers, data })).status()).toBe(401);
+  await signInForBrowserTest(page, "restaurant");
+  expect((await page.request.post(path, { headers, data })).status()).toBe(401);
+  await signInForBrowserTest(page, "admin");
+  expect((await page.request.post(path, { headers: { Origin: "https://other.example.test" }, data })).status()).toBe(403);
+  expect((await page.request.post(path, { headers, data: { password: "short" } })).status()).toBe(400);
+  expect((await page.request.post(path, { headers, data: { password: "🔒".repeat(20) } })).status()).toBe(400);
+});
+
 async function expectNoPageOverflow(page: Page) {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
 }

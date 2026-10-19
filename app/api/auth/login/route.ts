@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { createHash, timingSafeEqual } from "node:crypto";
-import { createSession } from "@/lib/auth";
+import { createSession, credentialTag } from "@/lib/auth";
 import { query } from "@/lib/db";
 import { apiError, readJsonLimited, rejectCrossOrigin } from "@/lib/api";
 import { consumeRateLimit, requestIp } from "@/lib/rate-limit";
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     if (!user || !validPassword) return NextResponse.json({ error: "Correo o contraseña incorrectos" }, { status: 401 });
     if (user.signup_status !== "active") return NextResponse.json({ error: "La cuenta todavía está pendiente de activación" }, { status: 403 });
     if (!user.is_enabled) return NextResponse.json({ error: "La cuenta está pausada. Contactá a Polo." }, { status: 403 });
-    await createSession({ role: "restaurant", restaurantId: user.restaurant_id, email: user.email });
+    await createSession({ role: "restaurant", restaurantId: user.restaurant_id, email: user.email, credentialTag: credentialTag(user.password_hash) });
     return NextResponse.json({ role: "restaurant" });
   } catch (error) { return apiError(error); }
 }

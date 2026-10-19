@@ -1,14 +1,21 @@
 import { cookies } from "next/headers";
+import { createHmac } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { query } from "@/lib/db";
 
-export type Session = { role: "admin" | "restaurant"; restaurantId?: string; email: string };
+export type Session = { role: "admin" | "restaurant"; restaurantId?: string; email: string; credentialTag?: string };
 const COOKIE = "mesa_session";
 
 function secret() {
   const value = process.env.AUTH_SECRET;
   if (!value || value.length < 32) throw new Error("AUTH_SECRET debe tener al menos 32 caracteres");
   return new TextEncoder().encode(value);
+}
+
+// The tag changes with the stored password, invalidating sessions after a reset.
+// Only this keyed digest is included in the cookie, never the bcrypt hash.
+export function credentialTag(passwordHash: string) {
+  return createHmac("sha256", secret()).update(passwordHash).digest("hex");
 }
 
 export async function createSession(session: Session) {
@@ -27,7 +34,7 @@ export async function getSession(): Promise<Session | null> {
   try {
     const { payload } = await jwtVerify(token, secret());
     if ((payload.role === "admin" || payload.role === "restaurant") && typeof payload.email === "string") {
-      return { role: payload.role, email: payload.email, restaurantId: typeof payload.restaurantId === "string" ? payload.restaurantId : undefined };
+      return { role: payload.role, email: payload.email, restaurantId: typeof payload.restaurantId === "string" ? payload.restaurantId : undefined, credentialTag: typeof payload.credentialTag === "string" ? payload.credentialTag : undefined };
     }
   } catch { /* Expired or invalid cookie. */ }
   return null;
@@ -38,8 +45,12 @@ export async function requireSession(role: Session["role"]) {
   if (session?.role !== role) return null;
   if (role === "restaurant") {
     if (!session.restaurantId) return null;
-    const { rows } = await query<{ is_enabled: boolean; signup_status: string }>("SELECT is_enabled, signup_status FROM restaurants WHERE id = $1", [session.restaurantId]);
-    if (!rows[0]?.is_enabled || rows[0].signup_status !== "active") return null;
+    const { rows } = await query<{ is_enabled: boolean; signup_status: string; password_hash: string }>(`
+      SELECT r.is_enabled, r.signup_status, u.password_hash FROM restaurants r
+      JOIN users u ON u.restaurant_id = r.id WHERE r.id = $1 AND u.email = $2
+    `, [session.restaurantId, session.email]);
+    const account = rows[0];
+    if (!account?.is_enabled || account.signup_status !== "active" || session.credentialTag !== credentialTag(account.password_hash)) return null;
   }
   return session;
 }
