@@ -118,6 +118,9 @@ export async function ensureSchema() {
           restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
           customer_name text NOT NULL,
           customer_phone text NOT NULL,
+          delivery_method text CHECK (delivery_method IN ('delivery', 'pickup')),
+          delivery_address text,
+          payment_method text CHECK (payment_method IN ('cash', 'transfer', 'mercado_pago', 'card')),
           notes text NOT NULL DEFAULT '',
           total bigint NOT NULL CHECK (total >= 0),
           status text NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'preparing', 'ready', 'completed', 'canceled')),
@@ -140,6 +143,9 @@ export async function ensureSchema() {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS phone text;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS featured boolean NOT NULL DEFAULT false;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS promo_price integer;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_method text CHECK (delivery_method IN ('delivery', 'pickup'));
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address text;
+        ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method text CHECK (payment_method IN ('cash', 'transfer', 'mercado_pago', 'card'));
         CREATE TABLE IF NOT EXISTS payment_proofs (
           id uuid PRIMARY KEY,
           restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,

@@ -323,10 +323,26 @@ test("example Premium menu shows a promotion and builds a cart", async ({ page }
   await expect(dialog.locator(".cart-total strong")).toHaveText(/19.800/);
   await dialog.getByLabel("Tu nombre").fill("Ana Pérez");
   await dialog.getByLabel("Tu teléfono").fill("+54 9 261 123-4567");
+  await dialog.getByLabel("¿Delivery o retirás?").selectOption("delivery");
+  await expect(dialog.getByLabel("Dirección de entrega")).toBeVisible();
+  await dialog.getByLabel("Dirección de entrega").fill("San Martín 123, Mendoza");
+  await dialog.getByLabel("Medio de pago preferido").selectOption("transfer");
   await dialog.getByRole("button", { name: "Simular pedido" }).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.getByRole("status")).toContainText("Pedido de ejemplo simulado.");
   await expect(page.getByRole("status")).not.toContainText("19.800");
+});
+
+test("Premium pickup order does not request a delivery address", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/demo");
+  await page.getByRole("button", { name: "Agregar", exact: true }).first().click();
+  await page.getByRole("button", { name: /Ver pedido/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Tu pedido" });
+  await dialog.getByLabel("¿Delivery o retirás?").selectOption("pickup");
+  await expect(dialog.getByLabel("Dirección de entrega")).toHaveCount(0);
+  await expect(dialog.getByLabel("Medio de pago preferido")).toBeVisible();
+  await expectNoPageOverflow(page);
 });
 
 test("plan examples show ordering only in Premium", async ({ page }) => {
@@ -453,6 +469,7 @@ test("Premium owner keeps older orders until marking them delivered", async ({ p
   await page.route("**/api/dashboard", route => route.fulfill({ json: { restaurant, products: [] } }));
   await page.route("**/api/orders", route => route.fulfill({ json: { orders: [{
     id: orderId, restaurant_id: restaurant.id, customer_name: "Ana Pérez", customer_phone: "+54 9 261 123-4567",
+    delivery_method: "delivery", delivery_address: "San Martín 123, Mendoza", payment_method: "transfer",
     notes: "Sin cebolla", total: 22800, status: "new", created_at: "2026-10-14T18:30:00Z",
     items: [{ product_id: null, product_name: "Ensalada", unit_price: 9900, quantity: 2, line_total: 19800 }, { product_id: null, product_name: "Limonada", unit_price: 3000, quantity: 1, line_total: 3000 }],
   }] } }));
@@ -468,6 +485,9 @@ test("Premium owner keeps older orders until marking them delivered", async ({ p
   await expect(page.locator(".order-card")).toContainText("14/10/2026");
   await expect(page.locator(".order-card")).toContainText("22.800");
   await expect(page.locator(".order-card")).toContainText("Sin cebolla");
+  await expect(page.locator(".order-card")).toContainText("Delivery");
+  await expect(page.locator(".order-card")).toContainText("San Martín 123, Mendoza");
+  await expect(page.locator(".order-card")).toContainText("Transferencia");
   await page.getByLabel(`Estado del pedido ${orderId.slice(0, 8)}`).selectOption("preparing");
   await expect(page.getByLabel(`Estado del pedido ${orderId.slice(0, 8)}`)).toHaveValue("preparing");
   await page.getByLabel(`Estado del pedido ${orderId.slice(0, 8)}`).selectOption("completed");
@@ -478,9 +498,13 @@ test("Premium owner keeps older orders until marking them delivered", async ({ p
 });
 
 test("public order endpoint rejects invalid and cross-site submissions", async ({ request }) => {
-  const data = { restaurantId: "11111111-1111-4111-8111-111111111111", customerName: "Ana Pérez", customerPhone: "+54 9 261 123-4567", notes: "", items: [] };
+  const data = { restaurantId: "11111111-1111-4111-8111-111111111111", customerName: "Ana Pérez", customerPhone: "+54 9 261 123-4567", notes: "", items: [{ productId: "22222222-2222-4222-8222-222222222222", quantity: 1 }] };
   const invalid = await request.post("/api/orders", { headers: { Origin: "http://localhost:3001" }, data });
   expect(invalid.status()).toBe(400);
+  const missingAddress = await request.post("/api/orders", { headers: { Origin: "http://localhost:3001" }, data: { ...data, deliveryMethod: "delivery", deliveryAddress: "", paymentMethod: "cash" } });
+  expect(missingAddress.status()).toBe(400);
+  const invalidPayment = await request.post("/api/orders", { headers: { Origin: "http://localhost:3001" }, data: { ...data, deliveryMethod: "pickup", deliveryAddress: "", paymentMethod: "unknown" } });
+  expect(invalidPayment.status()).toBe(400);
   const crossSite = await request.post("/api/orders", { headers: { Origin: "https://otro-sitio.example" }, data });
   expect(crossSite.status()).toBe(403);
 });

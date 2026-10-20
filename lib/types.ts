@@ -78,12 +78,19 @@ export type Product = {
 };
 
 export type OrderStatus = "new" | "preparing" | "ready" | "completed" | "canceled";
+export type DeliveryMethod = "delivery" | "pickup";
+export type PaymentMethod = "cash" | "transfer" | "mercado_pago" | "card";
+export const DELIVERY_LABELS: Record<DeliveryMethod, string> = { delivery: "Delivery", pickup: "Retiro en el local" };
+export const PAYMENT_LABELS: Record<PaymentMethod, string> = { cash: "Efectivo", transfer: "Transferencia", mercado_pago: "Mercado Pago", card: "Tarjeta" };
 export type OrderItem = { product_id: string | null; product_name: string; unit_price: number; quantity: number; line_total: number };
 export type Order = {
   id: string;
   restaurant_id: string;
   customer_name: string;
   customer_phone: string;
+  delivery_method: DeliveryMethod | null;
+  delivery_address: string | null;
+  payment_method: PaymentMethod | null;
   notes: string;
   total: number;
   status: OrderStatus;

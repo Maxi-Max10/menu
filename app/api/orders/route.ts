@@ -12,11 +12,18 @@ const createSchema = z.object({
   restaurantId: z.string().uuid(),
   customerName: z.string().trim().min(2).max(80),
   customerPhone: phoneSchema,
+  deliveryMethod: z.enum(["delivery", "pickup"]),
+  deliveryAddress: z.string().trim().max(180),
+  paymentMethod: z.enum(["cash", "transfer", "mercado_pago", "card"]),
   notes: z.string().trim().max(300),
   items: z.array(z.object({ productId: z.string().uuid(), quantity: z.number().int().min(1).max(20) })).min(1).max(200),
-}).refine((data) => new Set(data.items.map((item) => item.productId)).size === data.items.length, {
-  message: "Hay productos repetidos en el pedido",
-  path: ["items"],
+}).superRefine((data, context) => {
+  if (new Set(data.items.map((item) => item.productId)).size !== data.items.length) {
+    context.addIssue({ code: "custom", message: "Hay productos repetidos en el pedido", path: ["items"] });
+  }
+  if (data.deliveryMethod === "delivery" && data.deliveryAddress.length < 5) {
+    context.addIssue({ code: "custom", message: "Ingresá una dirección para el delivery", path: ["deliveryAddress"] });
+  }
 });
 
 type ProductPrice = { id: string; name: string; price: number; promo_price: number | null };
@@ -38,7 +45,9 @@ export async function POST(request: Request) {
       const ids = data.items.map((item) => item.productId);
       const products = await client.query<ProductPrice>("SELECT id, name, price, promo_price FROM products WHERE restaurant_id = $1 AND id = ANY($2::uuid[]) AND available = true FOR SHARE", [data.restaurantId, ids]);
       const { lines, total } = priceOrder(data.items, products.rows);
-      await client.query("INSERT INTO orders (id, restaurant_id, customer_name, customer_phone, notes, total) VALUES ($1, $2, $3, $4, $5, $6)", [orderId, data.restaurantId, data.customerName, data.customerPhone, data.notes, total]);
+      await client.query(`INSERT INTO orders (id, restaurant_id, customer_name, customer_phone, delivery_method, delivery_address, payment_method, notes, total)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, [orderId, data.restaurantId, data.customerName, data.customerPhone, data.deliveryMethod,
+        data.deliveryMethod === "delivery" ? data.deliveryAddress : null, data.paymentMethod, data.notes, total]);
       for (const line of lines) {
         await client.query("INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity, line_total) VALUES ($1, $2, $3, $4, $5, $6)", [orderId, line.product.id, line.product.name, line.unitPrice, line.quantity, line.lineTotal]);
       }
@@ -58,7 +67,8 @@ export async function GET() {
     const restaurant = await query<{ plan: string }>("SELECT plan FROM restaurants WHERE id = $1", [session.restaurantId]);
     if (restaurant.rows[0]?.plan !== "premium") return NextResponse.json({ error: "Los pedidos requieren Premium" }, { status: 403 });
     const { rows } = await query<StoredOrder>(`
-      SELECT o.id, o.restaurant_id, o.customer_name, o.customer_phone, o.notes, o.total::text AS total, o.status, o.created_at,
+      SELECT o.id, o.restaurant_id, o.customer_name, o.customer_phone, o.delivery_method, o.delivery_address, o.payment_method,
+        o.notes, o.total::text AS total, o.status, o.created_at,
         COALESCE((SELECT json_agg(json_build_object('product_id', oi.product_id, 'product_name', oi.product_name,
           'unit_price', oi.unit_price, 'quantity', oi.quantity, 'line_total', oi.line_total::text) ORDER BY oi.id)
           FROM order_items oi WHERE oi.order_id = o.id), '[]'::json) AS items
