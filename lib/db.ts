@@ -73,10 +73,16 @@ export async function ensureSchema() {
         CREATE TABLE IF NOT EXISTS billing_settings (
           id boolean PRIMARY KEY DEFAULT true CHECK (id),
           basic_url text NOT NULL DEFAULT '',
-          premium_url text NOT NULL DEFAULT ''
+          premium_url text NOT NULL DEFAULT '',
+          premium_link_seeded boolean NOT NULL DEFAULT false
         );
         INSERT INTO billing_settings (id, basic_url) VALUES (true, 'https://mpago.la/1U8CwPr')
           ON CONFLICT (id) DO NOTHING;
+        ALTER TABLE billing_settings ADD COLUMN IF NOT EXISTS premium_link_seeded boolean NOT NULL DEFAULT false;
+        UPDATE billing_settings
+          SET premium_url = CASE WHEN premium_url = '' THEN 'https://mpago.la/31BW4L3' ELSE premium_url END,
+              premium_link_seeded = true
+          WHERE premium_link_seeded = false;
         CREATE TABLE IF NOT EXISTS billing_notices (
           id uuid PRIMARY KEY,
           restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
