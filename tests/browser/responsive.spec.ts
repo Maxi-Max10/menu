@@ -582,9 +582,9 @@ test("each plan opens signup and a new request stays pending", async ({ page, re
   await page.route("**/api/admin/restaurants/*", route => route.fulfill({ json: { ok: true } }));
   await signInForBrowserTest(page, "admin");
   await page.goto("/admin");
-  await expect(page.getByText("Pendiente")).toBeVisible();
+  await expect(page.getByText("Pendiente", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Activar prueba" })).toBeVisible();
   page.once("dialog", dialog => dialog.dismiss());
   await page.getByRole("button", { name: "Activar prueba" }).click();
-  await expect(page.getByText("Pendiente")).toBeVisible();
+  await expect(page.getByText("Pendiente", { exact: true })).toBeVisible();
 });
