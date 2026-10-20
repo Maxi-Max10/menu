@@ -161,7 +161,7 @@ html {
 .cart-head .overline { color: #a17e57; }
 .cart-head h2 { margin: 7px 0 0; font-size: 35px; }
 .cart-close { width: 40px; height: 40px; flex-shrink: 0; display: grid; place-items: center; background: #edf2ea; border: 0; border-radius: 50%; }
-.cart-list { flex: 1; overflow: auto; }
+.cart-list { flex: 0 0 auto; overflow: visible; }
 .cart-line { display: flex; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 1px solid #edf0e8; padding: 18px 0; }
 .cart-line > div:first-child { min-width: 0; }
 .cart-line strong { display: block; font-size: 14px; overflow-wrap: anywhere; }
@@ -283,6 +283,7 @@ html {
 @media (max-width: 520px) { .custom-color-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .checkout-form label { display: block; margin: 0 0 13px; color: #425d49; font-size: 12px; font-weight: 700; }
+.checkout-form { flex-shrink: 0; }
 .checkout-form input, .checkout-form textarea, .checkout-form select { display: block; width: 100%; min-height: 42px; margin-top: 6px; padding: 10px 12px; border: 1px solid #dbe2d8; border-radius: 6px; background: white; color: #263b33; outline: none; font-size: 14px; }
 .checkout-form textarea { min-height: 64px; resize: vertical; }
 .checkout-form input:focus, .checkout-form textarea:focus, .checkout-form select:focus { border-color: #5b8963; box-shadow: 0 0 0 3px #5b896322; }
