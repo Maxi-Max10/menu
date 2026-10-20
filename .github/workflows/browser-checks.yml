@@ -21,6 +21,8 @@ jobs:
       - run: npm ci
       - run: npm run test:qr
       - run: npm run test:billing
+      - run: npm run test:billing-notice
+      - run: npm run test:payment-proof
       - run: npm run test:orders
       - run: npm run test:passwords
       - run: npx playwright install --with-deps chromium firefox webkit

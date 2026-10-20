@@ -39,6 +39,7 @@ export type Restaurant = {
   product_count?: number;
   owner_email?: string;
   owner_phone?: string | null;
+  billing_notice_sent_at?: string | null;
 };
 
 export function isHexColor(value: string | null | undefined): value is string {

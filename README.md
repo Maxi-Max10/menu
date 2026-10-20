@@ -5,7 +5,7 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 ## Funciones
 
 - **Registro desde la landing:** cada local elige Esencial o Premium, crea su cuenta y aparece como pendiente en el panel administrador. El primer mes gratis empieza al verificar su correo o al ser activado por el administrador.
-- **Administrador:** ve las solicitudes, puede activar pruebas, crear locales, cambiar planes, pausar cuentas, registrar cuotas mensuales manualmente y restablecer contraseñas desde el botón con la llave junto a cada local. La contraseña nueva debe tener al menos 10 caracteres y se confirma antes de guardarla; las sesiones anteriores de esa cuenta quedan invalidadas.
+- **Administrador:** ve las solicitudes, puede activar pruebas, crear locales, cambiar planes, pausar cuentas, revisar comprobantes y acreditar cuotas manualmente, y restablecer contraseñas desde el botón con la llave junto a cada local. La contraseña nueva debe tener al menos 10 caracteres y se confirma antes de guardarla; las sesiones anteriores de esa cuenta quedan invalidadas.
 - **Cada local:** edita nombre, descripción, logo, contacto y una de cinco paletas; carga productos con foto, precio, categoría y disponibilidad.
 - **Esencial:** primer mes gratis para locales nuevos; después $10.000 ARS al mes, hasta 100 productos.
 - **Premium:** primer mes gratis para locales nuevos; después $18.000 ARS al mes, hasta 200 productos, destacados, precios promocionales, carrito con pedidos recibidos en el panel del local y métricas de la carta.
@@ -18,7 +18,7 @@ Plataforma de cartas digitales para restaurantes, cafeterías y bares. Lista par
 1. Creá una base PostgreSQL. Puede ser cualquier proveedor accesible desde Vercel.
 2. Copiá `.env.example` a `.env.local` y completá las variables. Generá `AUTH_SECRET` con al menos 32 caracteres aleatorios. El correo y la contraseña `ADMIN_*` son el acceso del administrador principal. Para desarrollo local, dejá `NEXT_PUBLIC_SITE_URL` vacío; los QR usarán el origen local.
 3. Ejecutá `npm install` y `npm run dev`. Abrí `http://localhost:3000`.
-4. Ingresá en `/ingresar` con la cuenta administradora. También podés elegir un plan desde la landing y crear una cuenta nueva. Cuando el correo se confirma, la carta se publica durante un mes calendario sin registrar pago. Al terminar la prueba, registrá la primera cuota para mantenerla publicada.
+4. Ingresá en `/ingresar` con la cuenta administradora. También podés elegir un plan desde la landing y crear una cuenta nueva. Cuando el correo se confirma, la carta se publica durante un mes calendario sin registrar pago. Al terminar la prueba, enviá el aviso de pago; el local sube el comprobante y vos verificás el movimiento antes de acreditar la cuota.
 
 Las tablas se crean automáticamente cuando se hace la primera consulta a la base. Las contraseñas de los locales se guardan con bcrypt y el acceso se mantiene mediante una cookie firmada, HTTP only. Los intentos de ingreso y registro tienen límites guardados en PostgreSQL.
 
@@ -32,15 +32,21 @@ Importá este directorio como proyecto Next.js. Configurá `DATABASE_URL`, `AUTH
 
 Para que el registro se active sin intervención, configurá además `SMTP_USER=contacto@polopositivoar.com` y `SMTP_PASSWORD` con la contraseña de **esa casilla** de Hostinger en las variables privadas de Vercel. Polo usa `smtp.hostinger.com` con TLS en el puerto 465. La contraseña no debe ir en el repositorio ni en el chat. Si faltan estas variables o falla el envío, la solicitud queda pendiente y podés usar «Activar prueba» en el panel tras comprobar por tu cuenta quién pidió el acceso. El enlace de verificación vence en 24 horas, se usa una sola vez y exige la contraseña creada al registrarse; el mes gratis comienza al confirmarlo.
 
+### Avisos de pago mensuales
+
+Creá en Mercado Pago dos Links de pago de importe fijo, uno por plan. Si querés recibir $10.000 por Esencial y $18.000 por Premium después de comisiones, usá el monto final que Mercado Pago muestre al seleccionar «Recibir». El enlace Esencial compartido por el dueño (`https://mpago.la/1U8CwPr`) se carga al crear la configuración inicial; comprobá su importe en Mercado Pago antes de enviar avisos. En `/admin`, guardá el enlace Premium cuando esté listo. El panel acepta enlaces HTTPS de `mpago.la` o `link.mercadopago.com.ar` y permite editar ambos enlaces.
+
+Cuando termine el mes gratis o venza una cuota, usá «Enviar aviso» en la fila del local. El correo muestra el importe del plan, la fecha de vencimiento, un botón y un QR hacia el mismo Link de pago. Requiere `SMTP_USER` y `SMTP_PASSWORD`. Se guarda el estado del envío y no se vuelve a enviar el aviso de ese vencimiento si ya se envió. El local entra a su cuenta y sube un JPG, PNG o PDF (hasta 4 MB) desde «Pago y comprobante». En `/admin`, descargá el archivo, verificá el movimiento en Mercado Pago y elegí «Aprobar y acreditar» o «Rechazar». El comprobante queda asociado al local y al vencimiento; subirlo no activa la cuenta. El correo es un aviso de pago, no una factura fiscal.
+
 Para recibir pedidos, el local Premium debe activar «Habilitar pedidos desde la carta» en «Identidad del local». Los clientes eligen cantidades, ingresan sus datos y confirman el pedido en Polo. El local lo ve en su panel y confirma disponibilidad e importe final con el cliente; Polo no procesa pagos. Los pedidos permanecen visibles, incluso después de medianoche, hasta que el local los marca como «Entregado». El número de WhatsApp es opcional y se muestra como enlace de contacto en la carta.
 
 ## Notas operativas
 
 - El registro de cuota suma un mes calendario al vencimiento vigente, o desde el momento del pago si ya venció. Se guarda un asiento en `payments` con el importe del plan en ese momento.
-- El mes gratis empieza cuando se verifica el correo del dueño o el administrador activa un local nuevo, y se aplica una sola vez en ambos planes. No modifica vencimientos de locales existentes ni genera un asiento en `payments`. Si se registra un pago durante la prueba, el mes pagado empieza al terminarla.
+- El mes gratis empieza cuando se verifica el correo del dueño o el administrador activa un local nuevo, y se aplica una sola vez en ambos planes. No modifica vencimientos de locales existentes ni genera un asiento en `payments`. La carga del comprobante se habilita al vencer la prueba o cuota.
 - El plan Esencial no admite más de 100 productos. Al bajar de Premium se desactivan los pedidos, destacados y precios promocionales.
 - El panel Premium muestra visitas a la carta, vistas de productos y pedidos recibidos durante los últimos 30 días. Las visitas y vistas son señales de interés, no ventas confirmadas; `/demo` no genera eventos.
-- Esta versión todavía no cobra automáticamente. El administrador acredita pagos manualmente. Con SMTP configurado, la app envía el enlace de verificación; sin SMTP, el administrador debe aprobar la solicitud.
+- Esta versión no cobra ni acredita cuotas automáticamente. El administrador envía el aviso desde el panel, coteja el comprobante con el movimiento en Mercado Pago y aprueba la cuota. El correo SMTP también se usa para verificar cuentas nuevas.
 - `/demo` contiene una carta ilustrativa sin datos reales, con fotos, destacados, una promoción y un carrito de ejemplo. En la demo el pedido se simula sin enviarse a ningún local. La foto de la torta es [Strawberry Chocolate Cake de Poly Haven](https://polyhaven.com/a/strawberry_chocolate_cake), bajo licencia CC0.
 
 ## Comandos

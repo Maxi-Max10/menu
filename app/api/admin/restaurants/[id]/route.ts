@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { randomUUID } from "crypto";
 import { requireSession } from "@/lib/auth";
 import { query, transaction } from "@/lib/db";
 import { apiError, rejectCrossOrigin, unauthorized } from "@/lib/api";
@@ -10,7 +9,6 @@ import { nextPeriodEnd } from "@/lib/billing";
 const patchSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("set-enabled"), enabled: z.boolean() }),
   z.object({ action: z.literal("set-plan"), plan: z.enum(["basic", "premium"]) }),
-  z.object({ action: z.literal("record-payment"), note: z.string().max(200).optional() }),
   z.object({ action: z.literal("activate-trial") }),
 ]);
 
@@ -50,19 +48,6 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       });
       if (outcome === "missing") return NextResponse.json({ error: "Local no encontrado" }, { status: 404 });
       if (outcome === "limit") return NextResponse.json({ error: "Para pasar a Esencial, dejá hasta 100 productos." }, { status: 409 });
-    } else {
-      const outcome = await transaction(async (client) => {
-        const found = await client.query<Restaurant>("SELECT * FROM restaurants WHERE id = $1 FOR UPDATE", [id]);
-        const restaurant = found.rows[0];
-        if (!restaurant) return "missing";
-        if (restaurant.signup_status === "pending") return "pending";
-        const nextEnd = nextPeriodEnd(restaurant.paid_until ? new Date(restaurant.paid_until) : null);
-        await client.query("UPDATE restaurants SET paid_until = $1, is_enabled = true WHERE id = $2", [nextEnd, id]);
-        await client.query("INSERT INTO payments (id, restaurant_id, amount, period_end, note) VALUES ($1, $2, $3, $4, $5)", [randomUUID(), id, PLANS[restaurant.plan].price, nextEnd, data.note || ""]);
-        return "ok";
-      });
-      if (outcome === "missing") return NextResponse.json({ error: "Local no encontrado" }, { status: 404 });
-      if (outcome === "pending") return NextResponse.json({ error: "Activá la prueba antes de registrar una cuota" }, { status: 409 });
     }
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }

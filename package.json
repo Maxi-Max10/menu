@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit",
     "test:qr": "node --experimental-strip-types --test tests/menu-qr.test.mjs",
     "test:billing": "node --experimental-strip-types --test tests/billing.test.mjs",
+    "test:billing-notice": "node tests/billing-notice.test.mjs",
+    "test:payment-proof": "node --experimental-strip-types tests/payment-proof.test.mjs",
     "test:orders": "node --experimental-strip-types tests/orders.test.mjs",
     "test:passwords": "node tests/password-reset.test.mjs",
     "test:browsers": "playwright test"

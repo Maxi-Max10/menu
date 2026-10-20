@@ -70,6 +70,26 @@ export async function ensureSchema() {
           period_end timestamptz NOT NULL,
           note text NOT NULL DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS billing_settings (
+          id boolean PRIMARY KEY DEFAULT true CHECK (id),
+          basic_url text NOT NULL DEFAULT '',
+          premium_url text NOT NULL DEFAULT ''
+        );
+        INSERT INTO billing_settings (id, basic_url) VALUES (true, 'https://mpago.la/1U8CwPr')
+          ON CONFLICT (id) DO NOTHING;
+        CREATE TABLE IF NOT EXISTS billing_notices (
+          id uuid PRIMARY KEY,
+          restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+          period_due_at timestamptz NOT NULL,
+          plan text NOT NULL,
+          amount integer NOT NULL CHECK (amount >= 0),
+          payment_url text NOT NULL,
+          recipient_email text NOT NULL,
+          status text NOT NULL CHECK (status IN ('sending', 'sent', 'failed')),
+          sent_at timestamptz,
+          created_at timestamptz NOT NULL DEFAULT now(),
+          UNIQUE (restaurant_id, period_due_at)
+        );
         CREATE TABLE IF NOT EXISTS menu_events (
           id bigserial PRIMARY KEY,
           restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
@@ -114,6 +134,20 @@ export async function ensureSchema() {
         ALTER TABLE users ADD COLUMN IF NOT EXISTS phone text;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS featured boolean NOT NULL DEFAULT false;
         ALTER TABLE products ADD COLUMN IF NOT EXISTS promo_price integer;
+        CREATE TABLE IF NOT EXISTS payment_proofs (
+          id uuid PRIMARY KEY,
+          restaurant_id uuid NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+          period_due_at timestamptz NOT NULL,
+          plan text NOT NULL CHECK (plan IN ('basic', 'premium')),
+          filename text NOT NULL,
+          mime_type text NOT NULL CHECK (mime_type IN ('image/jpeg', 'image/png', 'application/pdf')),
+          file_data bytea NOT NULL,
+          status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'rejected', 'approved')),
+          submitted_at timestamptz NOT NULL DEFAULT now(),
+          reviewed_at timestamptz,
+          UNIQUE (restaurant_id, period_due_at)
+        );
+        CREATE INDEX IF NOT EXISTS payment_proofs_status_idx ON payment_proofs(status, submitted_at DESC);
         CREATE INDEX IF NOT EXISTS products_restaurant_idx ON products(restaurant_id);
         CREATE INDEX IF NOT EXISTS payments_restaurant_idx ON payments(restaurant_id);
         CREATE INDEX IF NOT EXISTS menu_events_restaurant_date_idx ON menu_events(restaurant_id, created_at DESC);

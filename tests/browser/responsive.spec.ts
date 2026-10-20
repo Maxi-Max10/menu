@@ -54,6 +54,61 @@ test("admin sees the owner's signup phone", async ({ page }) => {
   await expect(page.getByText("Tel.: +54 9 11 1234-5678")).toBeVisible();
 });
 
+test("admin saves payment links and sends a due notice once", async ({ page }) => {
+  await signInForBrowserTest(page, "admin");
+  const local = { ...restaurant, id: "11111111-1111-4111-8111-111111111111", name: "Café Central", plan: "basic", owner_email: "owner@example.test", signup_status: "active", paid_until: "2020-01-01T00:00:00Z", product_count: 0 };
+  let sent = false;
+  let links = { basic: "", premium: "" };
+  await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [{ ...local, billing_notice_sent_at: sent ? "2026-10-19T00:00:00Z" : null }] } }));
+  await page.route("**/api/admin/billing", async route => {
+    if (route.request().method() === "PATCH") {
+      links = route.request().postDataJSON();
+      await route.fulfill({ json: { ok: true } });
+    } else await route.fulfill({ json: links });
+  });
+  await page.route(`**/api/admin/restaurants/${local.id}/billing-notice`, async route => {
+    expect(route.request().method()).toBe("POST");
+    sent = true;
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/admin");
+  await page.getByRole("textbox", { name: /Esencial/ }).fill("https://mpago.la/basic-test");
+  await page.getByRole("textbox", { name: /Premium/ }).fill("https://mpago.la/premium-test");
+  await page.getByRole("button", { name: "Guardar enlaces" }).click();
+  await expect(page.getByText("Enlaces de Mercado Pago guardados.")).toBeVisible();
+  expect(links).toEqual({ basic: "https://mpago.la/basic-test", premium: "https://mpago.la/premium-test" });
+  page.once("dialog", dialog => dialog.accept());
+  await page.getByRole("button", { name: "Enviar aviso", exact: true }).click();
+  await expect(page.getByText("Aviso de pago enviado a owner@example.test.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aviso enviado" })).toBeDisabled();
+});
+
+test("admin reviews a local's proof before crediting its period", async ({ page }) => {
+  await signInForBrowserTest(page, "admin");
+  const local = { ...restaurant, id: "11111111-1111-4111-8111-111111111111", name: "Café Central", plan: "basic", owner_email: "owner@example.test", signup_status: "active", paid_until: "2020-01-01T00:00:00Z", product_count: 0 };
+  const proofId = "22222222-2222-4222-8222-222222222222";
+  let approved = false;
+  await page.route("**/api/admin/restaurants", route => route.fulfill({ json: { restaurants: [local] } }));
+  await page.route("**/api/admin/billing", route => route.fulfill({ json: { basic: "", premium: "" } }));
+  await page.route("**/api/admin/payment-proofs", route => route.fulfill({ json: { proofs: approved ? [] : [{
+    id: proofId, restaurant_name: local.name, owner_email: local.owner_email,
+    period_due_at: local.paid_until, plan: "basic", filename: "pago.pdf", mime_type: "application/pdf",
+    status: "pending", submitted_at: "2026-10-19T12:00:00Z", current_period: true,
+  }] } }));
+  await page.route(`**/api/admin/payment-proofs/${proofId}`, async route => {
+    expect(route.request().postDataJSON()).toEqual({ action: "approve" });
+    approved = true;
+    await route.fulfill({ json: { ok: true } });
+  });
+  await page.goto("/admin");
+  await expect(page.getByRole("heading", { name: "Comprobantes pendientes" })).toBeVisible();
+  await expect(page.getByText("owner@example.test · Plan Esencial", { exact: false })).toBeVisible();
+  page.once("dialog", dialog => dialog.accept());
+  await page.getByRole("button", { name: "Aprobar y acreditar" }).click();
+  await expect(page.getByText("No hay comprobantes pendientes.")).toBeVisible();
+  expect(approved).toBe(true);
+});
+
 test("admin resets the selected local password and can retry errors on mobile", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await signInForBrowserTest(page, "admin");

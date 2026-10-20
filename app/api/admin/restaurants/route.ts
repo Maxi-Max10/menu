@@ -12,6 +12,7 @@ export async function GET() {
   if (!(await requireSession("admin"))) return unauthorized();
   try {
     const { rows } = await query<Restaurant>(`SELECT r.*, u.email AS owner_email, u.phone AS owner_phone, COUNT(p.id)::int AS product_count,
+      (SELECT bn.sent_at FROM billing_notices bn WHERE bn.restaurant_id = r.id AND bn.period_due_at = r.paid_until AND bn.status = 'sent' LIMIT 1) AS billing_notice_sent_at,
       (r.paid_until IS NOT NULL AND NOT EXISTS (SELECT 1 FROM payments pay WHERE pay.restaurant_id = r.id)) AS is_trial
       FROM restaurants r LEFT JOIN users u ON u.restaurant_id = r.id LEFT JOIN products p ON p.restaurant_id = r.id
       GROUP BY r.id, u.email, u.phone ORDER BY r.created_at DESC`);
