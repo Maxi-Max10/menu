@@ -498,7 +498,7 @@ test("Premium owner keeps older orders until marking them delivered", async ({ p
 });
 
 test("public order endpoint rejects invalid and cross-site submissions", async ({ request }) => {
-  const data = { restaurantId: "11111111-1111-4111-8111-111111111111", customerName: "Ana Pérez", customerPhone: "+54 9 261 123-4567", notes: "", items: [{ productId: "22222222-2222-4222-8222-222222222222", quantity: 1 }] };
+  const data = { restaurantId: "11111111-1111-4111-8111-111111111111", customerName: "Ana Pérez", customerPhone: "+54 9 261 123-4567", checkoutVersion: 2, notes: "", items: [{ productId: "22222222-2222-4222-8222-222222222222", quantity: 1 }] };
   const invalid = await request.post("/api/orders", { headers: { Origin: "http://localhost:3001" }, data });
   expect(invalid.status()).toBe(400);
   const missingAddress = await request.post("/api/orders", { headers: { Origin: "http://localhost:3001" }, data: { ...data, deliveryMethod: "delivery", deliveryAddress: "", paymentMethod: "cash" } });

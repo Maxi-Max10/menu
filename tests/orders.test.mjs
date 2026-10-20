@@ -1,7 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { menuColors, priceOrder, readableTextOn } from "../lib/types.ts";
-import { brandingSchema } from "../lib/validation.ts";
+import { brandingSchema, orderInputSchema } from "../lib/validation.ts";
+
+test("order checkout accepts an older open tab and validates current delivery details", () => {
+  const base = {
+    restaurantId: "11111111-1111-4111-8111-111111111111",
+    customerName: "Ana Pérez", customerPhone: "+54 9 261 123-4567", notes: "Sin sal",
+    items: [{ productId: "22222222-2222-4222-8222-222222222222", quantity: 1 }],
+  };
+  assert.equal(orderInputSchema.safeParse(base).success, true);
+  assert.equal(orderInputSchema.safeParse({ ...base, checkoutVersion: 2 }).success, false);
+  assert.equal(orderInputSchema.safeParse({ ...base, checkoutVersion: 2, deliveryMethod: "delivery", deliveryAddress: "", paymentMethod: "cash" }).success, false);
+  assert.equal(orderInputSchema.safeParse({ ...base, checkoutVersion: 2, deliveryMethod: "delivery", deliveryAddress: "San Martín 123", paymentMethod: "cash" }).success, true);
+  assert.equal(orderInputSchema.safeParse({ ...base, checkoutVersion: 2, deliveryMethod: "pickup", deliveryAddress: "", paymentMethod: "transfer" }).success, true);
+});
 
 test("order total uses current server product prices and promotions", () => {
   const products = [

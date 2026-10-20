@@ -28,7 +28,7 @@ export function CheckoutForm({ restaurantId, items, total, demo, onSuccess }: {
     setError("");
     try {
       const result = await api<{ id: string }>("/api/orders", { method: "POST", body: JSON.stringify({
-        restaurantId, customerName, customerPhone, deliveryMethod,
+        restaurantId, customerName, customerPhone, checkoutVersion: 2, deliveryMethod,
         deliveryAddress: deliveryMethod === "delivery" ? deliveryAddress : "", paymentMethod, notes,
         items: items.map(({ product, quantity }) => ({ productId: product.id, quantity })),
       }) });
